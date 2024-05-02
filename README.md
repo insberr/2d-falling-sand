@@ -1,2 +1,2 @@
 # Falling Sand Simulation
-Livestreamed content
+Live-streamed content
