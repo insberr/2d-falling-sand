@@ -17,7 +17,7 @@ const float WindowWidth = 800.0f;
 const float WindowHeight = 600.0f;
 const unsigned int GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
 const unsigned int GridHeight = static_cast<unsigned int>(WindowHeight / PixelSize);
-const bool BottomStop = false;
+const bool BottomStop = true;
 
 Color ColorForPixel(const Pixel& pixel) {
     const auto type = pixel.GetType();
