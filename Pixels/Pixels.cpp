@@ -6,9 +6,37 @@
 #include "Pixels.h"
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include <iostream>
+#include <cmath>
 
 namespace wrl = Microsoft::WRL;
 namespace dx = DirectX;
+
+const float PixelSize = 5.0f;
+const float WindowWidth = 800.0f;
+const float WindowHeight = 600.0f;
+const unsigned int GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
+const unsigned int GridHeight = static_cast<unsigned int>(WindowHeight / PixelSize);
+const bool BottomStop = false;
+
+Color ColorForPixel(const Pixel& pixel) {
+    const auto type = pixel.GetType();
+    switch (type) {
+        case Pixel::Type::Unknown:
+            return { 250, 0, 250, 255 };
+        case Pixel::Type::Sand:
+            // I got the color right on point first try!
+            return { 200, 150, 10, 255 };
+        case Pixel::Type::Water:
+            return { 13, 136, 188, 255 };
+        case Pixel::Type::Lava:
+            return { 239, 103, 23, 255 };
+        case Pixel::Type::Rock:
+            return { 170, 170, 170, 255 };
+        default:
+            return { 250, 0, 250, 255 };
+    }
+}
 
 struct Vertex {
     struct {
@@ -31,24 +59,30 @@ const unsigned short indices[] = {
 };
 
 Pixels::Pixels(Graphics &gfx) {
-    float lx = 10.0f;
-    float ly = 10.0f;
+    int lx = 0; // 10.0f
+    int ly = 0;
     Color lc = { 0, 255, 0, 1 };
-    for (unsigned int i = 0; i < 1300; ++i) {
-        auto pixel = new Pixel({ lc.r, lc.g, lc.b, 255 });
-        Position pos = { lx, ly };
 
-        pixels.insert(std::pair<Position, Pixel*>(pos, pixel));
+    std::random_device rd; // obtain a random number from hardware
+    std::mt19937 gen(rd()); // seed the generator
+    std::uniform_int_distribution<> range(1, static_cast<int>(Pixel::Type::last) - 1); // define the range
 
-        lx += 20.0f;
-        if (lx >= 800) {
-            ly += 40.0f;
-            lx = 10.0f;
-        }
-
-        ++lc.r;
-        --lc.g;
-    }
+//    for (unsigned int i = 0; i < GridWidth * GridHeight; ++i) {
+//        auto pixel = new Pixel(static_cast<Pixel::Type>(range(gen)));
+//        Position pos = { lx, ly };
+//
+//
+//        pixels.insert(std::pair<Position, Pixel*>(pos, pixel));
+//
+//        lx += 1;
+//        if (lx >= GridWidth) {
+//            ly += 1;
+//            lx = 0;
+//        }
+//
+//        ++lc.r;
+//        --lc.g;
+//    }
 
     // Create the vertex buffer
     wrl::ComPtr<ID3D11Buffer> vertexBuffer;
@@ -152,20 +186,21 @@ void Pixels::Draw(Graphics &gfx) const {
     for (const auto& [pos, pixel] : pixels) {
         // Create a constant buffer for our transformation matrix
         // const float scale = 0.1f;
-        const float size = 20.0f;
-        const float xpos = pos.x / 400.0f - 1.0f;
-        const float ypos = -pos.y / 300.0f + 1.0f;
+        const float xpos = ((pos.x * PixelSize) + (PixelSize / 2)) / 400.0f - 1.0f;
+        const float ypos = -((pos.y * PixelSize) + (PixelSize / 2)) / 300.0f + 1.0f;
+
+        const auto colorForPix = ColorForPixel(*pixel);
 
         const ConstantBuffer cb = {
             .transform = dx::XMMatrixTranspose(
-                dx::XMMatrixScaling((size / 400.0f), (size / 300.0f), 1.0f) *
+                dx::XMMatrixScaling((PixelSize / 400.0f), (PixelSize / 300.0f), 1.0f) *
                 dx::XMMatrixTranslation(xpos, ypos, 0.0f)
             ),
             .color = {
-                pixel->color.r / 255.0f,
-                pixel->color.g / 255.0f,
-                pixel->color.b / 255.0f,
-                pixel->color.a / 255.0f
+                colorForPix.r / 255.0f,
+                colorForPix.g / 255.0f,
+                colorForPix.b / 255.0f,
+                colorForPix.a / 255.0f
             }
         };
         wrl::ComPtr<ID3D11Buffer> constantBuffer;
@@ -192,25 +227,109 @@ Pixels::~Pixels() {
 
 }
 
-void Pixels::Update(float dt) {
+std::pair<int, int> lastMousePos = std::pair(0, 0);
+
+void Pixels::Update(Window &wnd, float dt) {
     // if (dt == 0.0f) return;
+
+
+    if (wnd.mouse.LeftIsPressed()) {
+        const auto [lmx, lmy] = lastMousePos;
+        const auto [mouseX, mouseY] = wnd.mouse.GetPos();
+
+        // const int gridPosX = mouseX / static_cast<int>(PixelSize);
+        // const int gridPosY = mouseY / static_cast<int>(PixelSize);
+
+//        pixels.insert_or_assign({ gridPosX, gridPosY }, new Pixel(Pixel::Type::Sand));
+
+        // Define the thickness of the drawing
+        int thickness = 0; // You can adjust this value to increase or decrease the thickness
+
+        float diffMX = mouseX - lmx;
+        float diffMY = mouseY - lmy;
+        float distance = std::sqrtf(diffMX * diffMX + diffMY * diffMY);
+
+        int numSteps = static_cast<int>(distance / 1.0f);
+        if (numSteps < 1) numSteps = 1;
+
+        // Perform interpolation and update pixels along the path
+        for (int i = 0; i <= numSteps; ++i) {
+            const float interpolateX = lmx + (mouseX - lmx) * (static_cast<float>(i) / numSteps);
+            const float interpolateY = lmy + (mouseY - lmy) * (static_cast<float>(i) / numSteps);
+
+            const float gridPosX = interpolateX / PixelSize;
+            const float gridPosY = interpolateY / PixelSize;
+
+            if (interpolateX >= 0.0f && interpolateY >= 0.0f) {
+                // Update the pixels in a square around the current position to make the drawing thicker
+                for (int dx = -thickness; dx <= thickness; ++dx) {
+                    for (int dy = -thickness; dy <= thickness; ++dy) {
+                        // where to draw
+                        int x = static_cast<int>(gridPosX) + dx;
+                        int y = static_cast<int>(gridPosY) + dy;
+                        pixels.insert_or_assign({ x, y }, new Pixel(Pixel::Type::Sand));
+                    }
+                }
+            }
+        }
+
+        lastMousePos = std::pair(mouseX, mouseY);
+//        const int gridPosX = mouseX / static_cast<int>(PixelSize);
+//        const int gridPosY = mouseY / static_cast<int>(PixelSize);
+//
+////        const float pixPosX = (gridPosX * 20.0f) + 10.0f;
+////        const float pixPosY = (gridPosY * 20.0f) + 10.0f;
+//
+//        // size_t removed = pixels.erase({ pixPosX, pixPosY });
+//        pixels.insert_or_assign({ gridPosX, gridPosY }, new Pixel(Pixel::Type::Sand));
+
+
+        // std::cout << pixPosX << " " << pixPosY << " " << removed << std::endl;
+    }
+    if (wnd.mouse.RightIsPressed()) {
+        const auto [mouseX, mouseY] = wnd.mouse.GetPos();
+
+        const int gridPosX = mouseX / static_cast<int>(PixelSize);
+        const int gridPosY = mouseY / static_cast<int>(PixelSize);
+
+        // const float pixPosX = (gridPosX * 20.0f) + 10.0f;
+        // const float pixPosY = (gridPosY * 20.0f) + 10.0f;
+
+        size_t removed = pixels.erase({ gridPosX, gridPosY });
+        // pixels.insert_or_assign({ pixPosX, pixPosY }, new Pixel(Pixel::Type::Sand));
+
+        // std::cout << pixPosX << " " << pixPosY << " " << removed << std::endl;
+    }
+
+
     stepTime -= dt;
     if (stepTime <= 0.0f) {
-        stepTime = 0.5f;
+        stepTime = 0.1f;
     } else {
         return;
     }
 
-    for (const auto& [pos, pix] : pixels) {
+    std::map<Position, Pixel*> newPixels = pixels;
+
+    for (const auto& [pos, pix] : newPixels) {
         // Limit pixels from going off the bottom of the screen
         // later we put pixel at top of screen
-        if (pos.y >= 500.0f) continue;
-
         Position newPos = pos;
-        newPos.y += 20.0f;
+
+        if (pos.y >= GridHeight - 1) {
+            newPos.y = 0;
+            if (BottomStop) {
+                continue;
+            }
+        } else {
+            newPos.y += 1;
+        }
 
         bool exists = pixels.contains(newPos);
-        if (exists) continue;
+        if (exists) {
+            pixels.insert(std::pair(pos, pix));
+            continue;
+        }
 
         auto nodePix = pixels.extract(pos);
         nodePix.key() = newPos;

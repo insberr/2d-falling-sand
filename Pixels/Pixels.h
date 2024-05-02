@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../Graphics.h"
+#include "../Window.h"
 #include <map>
 
 struct Color {
@@ -15,19 +16,44 @@ struct Color {
 };
 
 struct Position {
-    float x;
-    float y;
-    auto operator<=>(Position const &) const = default;
+    int x;
+    int y;
+    bool operator< (const Position& position) const {
+        if (this->y > position.y) {
+            return true;
+        }
+        if (this->y == position.y && this->x < position.x) {
+            return true;
+        }
+        return false;
+    }
 };
 
 class Pixel {
     friend class Pixels;
 public:
-    Pixel(const Color &color_): color(color_) {}
-    ~Pixel();
+    enum class Type {
+        Unknown = 0,
+        Sand,
+        Water,
+        Lava,
+        Rock,
+
+        last
+    };
+
+    Pixel(Type type_): type(type_) {}
+    ~Pixel() = default;
+
+    Type GetType() const {
+        return type;
+    }
 private:
-    const Color color;
+    Type type{Type::Unknown};
 };
+
+Color ColorForPixel(const Pixel& pixel);
+
 
 class Pixels {
 public:
@@ -35,11 +61,11 @@ public:
 
     Pixels();
 
-    void Update(float dt);
+    void Update(Window &wnd, float dt);
     void Draw(Graphics &gfx) const;
 
     ~Pixels();
 private:
     std::map<Position, Pixel*> pixels;
-    float stepTime{0.5f};
+    float stepTime{0.1f};
 };

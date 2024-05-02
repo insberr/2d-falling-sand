@@ -30,6 +30,10 @@ App::App()
     wnd.Gfx().SetProjection( DirectX::XMMatrixPerspectiveLH( 1.0f,3.0f / 4.0f,0.5f,40.0f ) );
 }
 
+void App::Update(float dt) {
+    pxs.Update(wnd, dt);
+}
+
 void App::Render(float dt)
 {
     wnd.Gfx().BeginFrame(0.07f, 0.0f, 0.12f);
@@ -80,8 +84,4 @@ int App::Run()
 
 
     }
-}
-
-void App::Update(float dt) {
-    pxs.Update(dt);
 }
