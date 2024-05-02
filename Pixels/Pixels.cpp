@@ -34,14 +34,15 @@ Pixels::Pixels(Graphics &gfx) {
     float lx = 10.0f;
     float ly = 10.0f;
     Color lc = { 0, 255, 0, 1 };
-    for (auto& pixel : pixels) {
-        pixel.x = lx;
-        pixel.y = ly;
-        pixel.color = { lc.r, lc.g, lc.b, 255 };
+    for (unsigned int i = 0; i < 1300; ++i) {
+        auto pixel = new Pixel({ lc.r, lc.g, lc.b, 255 });
+        Position pos = { lx, ly };
+
+        pixels.insert(std::pair<Position, Pixel*>(pos, pixel));
 
         lx += 20.0f;
         if (lx >= 800) {
-            ly += 20.0f;
+            ly += 40.0f;
             lx = 10.0f;
         }
 
@@ -147,13 +148,13 @@ struct ConstantBuffer {
     } color;
 };
 
-void Pixels::Draw(Graphics &gfx) {
-    for (const auto& pixel : pixels) {
+void Pixels::Draw(Graphics &gfx) const {
+    for (const auto& [pos, pixel] : pixels) {
         // Create a constant buffer for our transformation matrix
         // const float scale = 0.1f;
         const float size = 20.0f;
-        const float xpos = pixel.x / 400.0f - 1.0f;
-        const float ypos = -pixel.y / 300.0f + 1.0f;
+        const float xpos = pos.x / 400.0f - 1.0f;
+        const float ypos = -pos.y / 300.0f + 1.0f;
 
         const ConstantBuffer cb = {
             .transform = dx::XMMatrixTranspose(
@@ -161,10 +162,10 @@ void Pixels::Draw(Graphics &gfx) {
                 dx::XMMatrixTranslation(xpos, ypos, 0.0f)
             ),
             .color = {
-                pixel.color.r / 255.0f,
-                pixel.color.g / 255.0f,
-                pixel.color.b / 255.0f,
-                pixel.color.a / 255.0f
+                pixel->color.r / 255.0f,
+                pixel->color.g / 255.0f,
+                pixel->color.b / 255.0f,
+                pixel->color.a / 255.0f
             }
         };
         wrl::ComPtr<ID3D11Buffer> constantBuffer;
@@ -189,4 +190,33 @@ void Pixels::Draw(Graphics &gfx) {
 
 Pixels::~Pixels() {
 
+}
+
+void Pixels::Update(float dt) {
+    // if (dt == 0.0f) return;
+    stepTime -= dt;
+    if (stepTime <= 0.0f) {
+        stepTime = 0.5f;
+    } else {
+        return;
+    }
+
+    for (const auto& [pos, pix] : pixels) {
+        // Limit pixels from going off the bottom of the screen
+        // later we put pixel at top of screen
+        if (pos.y >= 500.0f) continue;
+
+        Position newPos = pos;
+        newPos.y += 20.0f;
+
+        bool exists = pixels.contains(newPos);
+        if (exists) continue;
+
+        auto nodePix = pixels.extract(pos);
+        nodePix.key() = newPos;
+        pixels.insert(std::move(nodePix));
+
+        // auto [_, worked] = pixels.try_emplace(newPos, pix);
+
+    }
 }

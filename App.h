@@ -15,7 +15,8 @@ public:
     int Run();
     ~App();
 private:
-    void DoFrame();
+    void Update(float dt);
+    void Render(float dt);
 private:
     // ImguiManager imgui;
     Window wnd;

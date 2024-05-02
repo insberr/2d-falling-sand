@@ -17,15 +17,16 @@ struct Color {
 struct Position {
     float x;
     float y;
+    auto operator<=>(Position const &) const = default;
 };
 
 class Pixel {
     friend class Pixels;
 public:
-    Pixel();
+    Pixel(const Color &color_): color(color_) {}
     ~Pixel();
 private:
-    Color color;
+    const Color color;
 };
 
 class Pixels {
@@ -34,9 +35,11 @@ public:
 
     Pixels();
 
-    void Draw(Graphics &gfx);
+    void Update(float dt);
+    void Draw(Graphics &gfx) const;
 
     ~Pixels();
 private:
-    std::map<Position, Pixel> pixels;
+    std::map<Position, Pixel*> pixels;
+    float stepTime{0.5f};
 };

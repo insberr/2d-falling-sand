@@ -30,10 +30,8 @@ App::App()
     wnd.Gfx().SetProjection( DirectX::XMMatrixPerspectiveLH( 1.0f,3.0f / 4.0f,0.5f,40.0f ) );
 }
 
-void App::DoFrame()
+void App::Render(float dt)
 {
-    const auto dt = timer.Mark() * speed_factor;
-
     wnd.Gfx().BeginFrame(0.07f, 0.0f, 0.12f);
     // wnd.Gfx().SetCamera(cam.GetMatrix());
 //    for (int x = 10; x < 800; x += 20) {
@@ -69,12 +67,21 @@ int App::Run()
 {
     while( true )
     {
+        const float dt = timer.Mark() * speed_factor;
         // process all messages pending, but to not block for new messages
         if( const auto ecode = Window::ProcessMessages() )
         {
             // if return optional has value, means we're quitting so return exit code
             return *ecode;
         }
-        DoFrame();
+
+        Update(dt);
+        Render(dt);
+
+
     }
+}
+
+void App::Update(float dt) {
+    pxs.Update(dt);
 }
