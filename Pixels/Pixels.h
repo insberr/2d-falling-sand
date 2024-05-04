@@ -64,7 +64,7 @@ public:
     Pixels();
 
     void Update(Window &wnd, float dt);
-    void Draw(Graphics &gfx) const;
+    void Draw(Graphics &gfx);
 
     ~Pixels();
 private:

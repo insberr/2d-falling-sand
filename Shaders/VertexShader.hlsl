@@ -16,12 +16,12 @@ struct VSOut {
 
 cbuffer Cbuf {
     matrix transform;
-    float4 colorpx;
 }
 
 VSOut main(VSIn input) {
     VSOut vso;
-    vso.pos = float4(input.instancePosition, 0.0f, 0.0f);
+    // mul(float4(pos, 0.0f, 1.0f), transform);
+    vso.pos = mul( float4( input.pos - input.instancePosition, 0.0f, 1.0f), transform );
     vso.color = input.instanceColor;
 
     return vso;

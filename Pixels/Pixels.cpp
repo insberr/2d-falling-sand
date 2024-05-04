@@ -115,16 +115,18 @@ Pixels::Pixels(Graphics &gfx) {
     auto instances = new PixelInstance[pixels.size()];
     unsigned loopCount = 0;
     for (const auto& [pos, pix] : pixels) {
+        const auto color = ColorForPixel(*pix);
+
         instances[loopCount] = {
             .worldPosition {
-                100.0f,
-                100.0f
+                static_cast<float>(pos.x),
+                static_cast<float>(pos.y)
             },
             .color {
-                1.0f,
-                1.0f,
-                1.0f,
-                1.0f
+                static_cast<float>(color.r) / 255.0f,
+                static_cast<float>(color.g) / 255.0f,
+                static_cast<float>(color.b) / 255.0f,
+                static_cast<float>(color.a) / 255.0f
             }
         };
         ++loopCount;
@@ -186,8 +188,8 @@ Pixels::Pixels(Graphics &gfx) {
             { "Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
             { "Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 8u, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 
-            { "InstancePosition", 1, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-            { "InstanceColor", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 8u, D3D11_INPUT_PER_INSTANCE_DATA, 1 }
+            { "InstancePosition", 0, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "InstanceColor", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 8u, D3D11_INPUT_PER_INSTANCE_DATA, 1 }
     };
     // Create Layout
     gfx.device->CreateInputLayout(
@@ -199,6 +201,32 @@ Pixels::Pixels(Graphics &gfx) {
     );
 
     gfx.context->IASetInputLayout(inputLayout.Get());
+
+
+
+    // Set World Transform Matrix Constant Buffer
+    struct ConstantBuffer {
+        dx::XMMATRIX transform;
+    };
+    const ConstantBuffer cb = {
+        .transform = dx::XMMatrixTranspose(
+            dx::XMMatrixScaling((PixelSize / 400.0f), (PixelSize / 300.0f), 1.0f)
+        )
+    };
+    wrl::ComPtr<ID3D11Buffer> constantBuffer;
+    D3D11_BUFFER_DESC cbd;
+    cbd.BindFlags = D3D10_BIND_CONSTANT_BUFFER;
+    cbd.Usage = D3D11_USAGE_DYNAMIC;
+    cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    cbd.MiscFlags = 0u;
+    cbd.ByteWidth = sizeof(cb);
+    cbd.StructureByteStride = 0u;
+    D3D11_SUBRESOURCE_DATA csd = {};
+    csd.pSysMem = &cb;
+    gfx.device->CreateBuffer(&cbd, &csd, &constantBuffer);
+    // Bind constant buffer to vertex shader
+    gfx.context->VSSetConstantBuffers(0u, 1u, constantBuffer.GetAddressOf());
+
 
     // Bind render target
     gfx.context->OMSetRenderTargets(1u, gfx.target.GetAddressOf(), nullptr);
@@ -217,17 +245,17 @@ Pixels::Pixels(Graphics &gfx) {
     gfx.context->RSSetViewports(1u, &vp);
 }
 
-struct ConstantBuffer {
-    dx::XMMATRIX transform;
-    struct Col {
-        float r;
-        float g;
-        float b;
-        float a;
-    } color;
-};
+//struct ConstantBuffer {
+//    dx::XMMATRIX transform;
+//    struct Col {
+//        float r;
+//        float g;
+//        float b;
+//        float a;
+//    } color;
+//};
 
-void Pixels::Draw(Graphics &gfx) const {
+void Pixels::Draw(Graphics &gfx) {
 
 //    for (const auto& [pos, pixel] : pixels) {
 //        // Create a constant buffer for our transformation matrix
@@ -267,17 +295,60 @@ void Pixels::Draw(Graphics &gfx) const {
 //        // Issue the draw command to draw the verticies
 //        gfx.context->DrawIndexed((UINT)std::size(indices), 0u, 0u);
 //    }
+//    // Instance Buffer (Might want to update this every frame??)
+//    auto instances = new PixelInstance[pixels.size()];
+//    unsigned loopCount = 0;
+//    for (const auto& [pos, pix] : pixels) {
+//        const auto color = ColorForPixel(*pix);
+//
+//        instances[loopCount] = {
+//                .worldPosition {
+//                        static_cast<float>(pos.x),
+//                        static_cast<float>(pos.y)
+//                },
+//                .color {
+//                        static_cast<float>(color.r) / 255.0f,
+//                        static_cast<float>(color.g) / 255.0f,
+//                        static_cast<float>(color.b) / 255.0f,
+//                        static_cast<float>(color.a) / 255.0f
+//                }
+//        };
+//        ++loopCount;
+//    }
+//    D3D11_BUFFER_DESC instanceBufferDesc = {};
+//    instanceBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+//    instanceBufferDesc.ByteWidth = sizeof(PixelInstance) * pixels.size();
+//    instanceBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+//    instanceBufferDesc.CPUAccessFlags = 0;
+//    instanceBufferDesc.MiscFlags = 0;
+//    instanceBufferDesc.StructureByteStride = 0;
+//
+//    D3D11_SUBRESOURCE_DATA instanceData = {};
+//    instanceData.pSysMem = instances; // temp??
+//    instanceData.SysMemPitch = 0;
+//    instanceData.SysMemSlicePitch = 0;
+//    gfx.device->CreateBuffer(&instanceBufferDesc, &instanceData, &instanceBuffer);
+//    delete[] instances;
+//    instances = nullptr;
 
+    // const UINT stride = sizeof(Vertex);
+    unsigned int strides[2] = {
+        sizeof(Vertex),
+        sizeof(PixelInstance)
+    };
 
-    // todo temp
-    const UINT todo = 0;
+    // const UINT offset = 0u;
+    unsigned int offsets[2] = { 0, 0 };
 
-    const UINT stride = sizeof(Vertex);
-    const UINT offset = 0u;
+    ID3D11Buffer* bufferPointers[2] = {
+        vertexBuffer.Get(),
+        instanceBuffer.Get()
+    };
+
     // Set buffer to pipeline
-    gfx.context->IASetVertexBuffers(0, 1u, vertexBuffer.GetAddressOf(), &stride, &offset);
+    gfx.context->IASetVertexBuffers(0, 2u, bufferPointers, strides, offsets);
 
-    gfx.context->DrawIndexedInstanced((UINT)std::size(indices), todo, 0u, 0u, 0u);
+    gfx.context->DrawIndexedInstanced((UINT)std::size(indices), pixels.size(), 0u, 0u, 0u);
 }
 
 Pixels::~Pixels() {
