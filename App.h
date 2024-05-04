@@ -7,6 +7,7 @@
 #include "Window.h"
 #include "EngineTimer.h"
 #include "Pixels/Pixels.h"
+#include "ImguiManager.h"
 
 class App {
 public:
@@ -18,7 +19,7 @@ private:
     void Update(float dt);
     void Render(float dt);
 private:
-    // ImguiManager imgui;
+    ImguiManager imgui;
     Window wnd;
     EngineTimer timer;
     // std::vector<std::unique_ptr<Drawable>> drawables;

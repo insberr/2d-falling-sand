@@ -1,22 +1,20 @@
 //
 // Created by jonah on 5/2/2024.
 //
+// Credits to https://www.rastertek.com/dx11tut37.html For the example on instancing
+//
 
 #include <wrl.h>
 #include "Pixels.h"
 #include <d3d11.h>
 #include <DirectXMath.h>
-#include <iostream>
 #include <cmath>
 
-namespace dx = DirectX;
+#include "../imgui/imgui.h"
+#include "../imgui/imgui_impl_win32.h"
+#include "../imgui/imgui_impl_dx11.h"
 
-const float PixelSize = 1.0f;
-const float WindowWidth = 800.0f;
-const float WindowHeight = 600.0f;
-const unsigned int GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
-const unsigned int GridHeight = static_cast<unsigned int>(WindowHeight / PixelSize);
-const bool BottomStop = true;
+namespace dx = DirectX;
 
 Color ColorForPixel(const Pixel& pixel) {
     const auto type = pixel.GetType();
@@ -206,34 +204,7 @@ Pixels::Pixels(Graphics &gfx) {
 
 
     // Set World Transform Matrix Constant Buffer
-    struct ConstantBuffer {
-        dx::XMMATRIX transform;
-    };
-    const ConstantBuffer cb = {
-        .transform = dx::XMMatrixTranspose(
-            dx::XMMatrixScaling(PixelSize / 400.0f, PixelSize / 300.0f, 1.0f) *
-            dx::XMMatrixRotationZ( 180.0f * (3.14159f / 180.0f ))
-//            dx::XMMatrixTranslation(
-//                // -(1.0f - ( 1.0f / (PixelSize * 2.0f) )),
-//                -1.0f + (0.5f / PixelSize),
-//                -1.0f + (0.5f / PixelSize),
-//                0.0f
-//            )
-        )
-    };
-    wrl::ComPtr<ID3D11Buffer> constantBuffer;
-    D3D11_BUFFER_DESC cbd;
-    cbd.BindFlags = D3D10_BIND_CONSTANT_BUFFER;
-    cbd.Usage = D3D11_USAGE_DYNAMIC;
-    cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    cbd.MiscFlags = 0u;
-    cbd.ByteWidth = sizeof(cb);
-    cbd.StructureByteStride = 0u;
-    D3D11_SUBRESOURCE_DATA csd = {};
-    csd.pSysMem = &cb;
-    gfx.device->CreateBuffer(&cbd, &csd, &constantBuffer);
-    // Bind constant buffer to vertex shader
-    gfx.context->VSSetConstantBuffers(0u, 1u, constantBuffer.GetAddressOf());
+    UpdateConstantBuffer(gfx);
 
 
     // Bind render target
@@ -262,6 +233,34 @@ Pixels::Pixels(Graphics &gfx) {
 //        float a;
 //    } color;
 //};
+
+void Pixels::UpdateConstantBuffer(Graphics &gfx) {
+    // Set World Transform Matrix Constant Buffer
+    struct ConstantBuffer {
+        dx::XMMATRIX transform;
+    };
+    const ConstantBuffer cb = {
+        .transform = dx::XMMatrixTranspose(
+            dx::XMMatrixScaling(PixelSize / 400.0f, PixelSize / 300.0f, 1.0f) *
+            dx::XMMatrixRotationZ( 180.0f * (3.14159f / 180.0f ))
+        )
+    };
+
+    wrl::ComPtr<ID3D11Buffer> constantBuffer;
+
+    D3D11_BUFFER_DESC cbd;
+    cbd.BindFlags = D3D10_BIND_CONSTANT_BUFFER;
+    cbd.Usage = D3D11_USAGE_DYNAMIC;
+    cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    cbd.MiscFlags = 0u;
+    cbd.ByteWidth = sizeof(cb);
+    cbd.StructureByteStride = 0u;
+    D3D11_SUBRESOURCE_DATA csd = {};
+    csd.pSysMem = &cb;
+    gfx.device->CreateBuffer(&cbd, &csd, &constantBuffer);
+    // Bind constant buffer to vertex shader
+    gfx.context->VSSetConstantBuffers(0u, 1u, constantBuffer.GetAddressOf());
+}
 
 void Pixels::Draw(Graphics &gfx) {
 
@@ -359,6 +358,8 @@ void Pixels::Draw(Graphics &gfx) {
     gfx.context->IASetVertexBuffers(0, 2u, bufferPointers, strides, offsets);
 
     gfx.context->DrawIndexedInstanced((UINT)std::size(indices), pixels.size(), 0u, 0u, 0u);
+
+    DrawUI(gfx);
 }
 
 Pixels::~Pixels() {
@@ -483,4 +484,19 @@ void Pixels::Update(Window &wnd, float dt) {
         // auto [_, worked] = pixels.try_emplace(newPos, pix);
 
     }
+}
+
+void Pixels::DrawUI(Graphics &gfx) {
+    if (ImGui::Begin("Simulation Controls")) {
+        if (ImGui::SliderFloat("Particle Size", &PixelSize, 1.0f, 100.0f)) {
+            // Recalculate the grid size
+            GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
+            GridHeight = static_cast<unsigned int>(WindowHeight / PixelSize);
+
+            // Update the constant buffer matrix
+            UpdateConstantBuffer(gfx);
+        }
+        ImGui::Checkbox("Floor", &BottomStop);
+    }
+    ImGui::End();
 }

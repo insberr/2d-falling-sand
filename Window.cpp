@@ -8,9 +8,9 @@
 #include <sstream>
 
 #include "ErrorHandling/WindowsThrowMacros.h"
-//#include "./imgui/imgui.h"
-//#include "./imgui/imgui_impl_win32.h"
-//#include "./imgui/imgui_impl_dx11.h"
+#include "./imgui/imgui.h"
+#include "./imgui/imgui_impl_win32.h"
+#include "./imgui/imgui_impl_dx11.h"
 
 Window::WindowClass Window::WindowClass::wndClass;
 
@@ -76,14 +76,14 @@ Window::Window(int width, int height, const char *name) noexcept :
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
     // Init ImGui Win32 Impl
-    // ImGui_ImplWin32_Init(hWnd);
+     ImGui_ImplWin32_Init(hWnd);
 
     // Create graphics object
     pGfx = std::make_unique<Graphics>(hWnd);
 }
 
 Window::~Window() {
-    // ImGui_ImplWin32_Shutdown();
+     ImGui_ImplWin32_Shutdown();
     // Tell windows to destroy the window
     DestroyWindow(hWnd);
 }
@@ -114,9 +114,9 @@ LRESULT WINAPI Window::HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM
 }
 
 LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept {
-    // extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-    // if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) return true;
-    // const auto& imio = ImGui::GetIO();
+     extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+     if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) return true;
+     const auto& imio = ImGui::GetIO();
 
     switch (msg) {
         case WM_CLOSE:
@@ -136,7 +136,7 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
             // syskey commands need to be handled to track ALT key (VK_MENU) and F10
         case WM_SYSKEYDOWN:
             // If ImGui wants control over keyboard input
-            // if (imio.WantCaptureKeyboard) { break; }
+            if (imio.WantCaptureKeyboard) { break; }
 
             if( !(lParam & 0x40000000) || kbd.AutorepeatIsEnabled() ) // filter autorepeat
             {
@@ -155,7 +155,7 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
         /************* MOUSE MESSAGES ****************/
         case WM_MOUSEMOVE:
         {
-            // if (imio.WantCaptureMouse) { break; }
+            if (imio.WantCaptureMouse) { break; }
             const POINTS pt = MAKEPOINTS( lParam );
             // in client region -> log move, and log enter + capture mouse (if not previously in window)
             if( pt.x >= 0 && pt.x < width && pt.y >= 0 && pt.y < height ) {

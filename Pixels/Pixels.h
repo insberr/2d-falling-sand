@@ -57,7 +57,6 @@ private:
 
 Color ColorForPixel(const Pixel& pixel);
 
-
 class Pixels {
 public:
     Pixels(Graphics &gfx);
@@ -65,10 +64,23 @@ public:
     Pixels();
 
     void Update(Window &wnd, float dt);
+
+    void UpdateConstantBuffer(Graphics &gfx);
+    void DrawUI(Graphics &gfx);
     void Draw(Graphics &gfx);
 
     ~Pixels();
 private:
+    const float WindowWidth = 800.0f;
+    const float WindowHeight = 600.0f;
+    // Simulation controls
+    float PixelSize = 1.0f;
+    bool BottomStop = true;
+    // Constants calculated based on simulation controls
+    unsigned int GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
+    unsigned int GridHeight = static_cast<unsigned int>(WindowHeight / PixelSize);
+
+
     // Graphics Buffers
     wrl::ComPtr<ID3D11Buffer> vertexBuffer;
     wrl::ComPtr<ID3D11Buffer> instanceBuffer;

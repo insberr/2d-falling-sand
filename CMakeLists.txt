@@ -27,6 +27,23 @@ add_executable(2dfallingsand
         DxgiInfoManager.h
         Pixels/Pixels.cpp
         Pixels/Pixels.h
+
+        #Imgui
+        imgui/imgui_impl_dx11.cpp
+        imgui/imgui_demo.cpp
+        imgui/imgui_draw.cpp
+        imgui/imgui_impl_win32.cpp
+        imgui/imgui_tables.cpp
+        imgui/imgui_widgets.cpp
+        imgui/imgui.cpp
+        imgui/imgui_internal.h
+        imgui/imstb_rectpack.h
+        imgui/imstb_textedit.h
+        imgui/imstb_truetype.h
+        ImguiManager.cpp
+        ImguiManager.h
+
+        # Other
 )
 
 set_property(TARGET 2dfallingsand PROPERTY WIN32_EXECUTABLE true)

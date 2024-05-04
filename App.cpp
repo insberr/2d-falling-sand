@@ -11,10 +11,9 @@
 #include "EngineTimer.h"
 #include "Pixels/Pixels.h"
 
-//#include "./imgui/imgui.h"
-//#include "./imgui/imgui_impl_win32.h"
-//#include "./imgui/imgui_impl_dx11.h"
-//#include "ImguiManager.h"
+#include "./imgui/imgui.h"
+#include "./imgui/imgui_impl_win32.h"
+#include "./imgui/imgui_impl_dx11.h"
 
 //#include "Camera.h"
 
@@ -48,17 +47,14 @@ void App::Render(float dt)
     pxs.Draw(wnd.Gfx());
 
     /* ImGui Stuff */
-//    if (ImGui::Begin("Simulation Speed")) {
-//        ImGui::SliderFloat("Speed Factor", &speed_factor, -5.0f, 5.0f);
-//        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-//    }
-//    ImGui::End();
+    if (ImGui::Begin("Simulation Speed")) {
+        ImGui::SliderFloat("Speed Factor", &speed_factor, -5.0f, 5.0f);
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    }
+    ImGui::End();
 
     // Camera controls
     // cam.SpawnControlWindow();
-
-    // IDirect3DSurface9* surface;
-
 
     // Present the frame to the GPU
     wnd.Gfx().EndFrame();
