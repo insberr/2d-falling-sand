@@ -74,9 +74,11 @@ private:
     const float WindowWidth = 800.0f;
     const float WindowHeight = 600.0f;
     // Simulation controls
-    float PixelSize = 1.0f;
+    float PixelSize = 2.0f;
     bool BottomStop = true;
+    // -- Drawing
     Pixel::Type particleDrawType{Pixel::Type::Sand};
+    unsigned int drawSize{1};
     // Constants calculated based on simulation controls
     unsigned int GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
     unsigned int GridHeight = static_cast<unsigned int>(WindowHeight / PixelSize);
@@ -87,7 +89,7 @@ private:
     wrl::ComPtr<ID3D11Buffer> instanceBuffer;
 
     // The pixels and simulation
-    std::map<Position, Pixel*> pixels;
+    std::map<Position, std::shared_ptr<Pixel>> pixels;
     float stepSpeed{0.01f};
     float stepTime{stepSpeed};
 

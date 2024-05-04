@@ -9,6 +9,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <cmath>
+#include <iostream>
 
 #include "../imgui/imgui.h"
 #include "../imgui/imgui_impl_win32.h"
@@ -372,7 +373,7 @@ void Pixels::Update(Window &wnd, float dt) {
     // if (dt == 0.0f) return;
 
 
-    if (wnd.mouse.LeftIsPressed()) {
+    if (wnd.mouse.LeftIsPressed() && !ImGui::IsAnyItemActive()) {
         const auto [lmx, lmy] = lastMousePos;
         const auto [mouseX, mouseY] = wnd.mouse.GetPos();
 
@@ -382,7 +383,7 @@ void Pixels::Update(Window &wnd, float dt) {
 //        pixels.insert_or_assign({ gridPosX, gridPosY }, new Pixel(Pixel::Type::Sand));
 
         // Define the thickness of the drawing
-        int thickness = 0; // You can adjust this value to increase or decrease the thickness
+        int thickness = drawSize; // You can adjust this value to increase or decrease the thickness
 
         float diffMX = mouseX - lmx;
         float diffMY = mouseY - lmy;
@@ -406,7 +407,7 @@ void Pixels::Update(Window &wnd, float dt) {
                         // where to draw
                         int x = static_cast<int>(gridPosX) + dx;
                         int y = static_cast<int>(gridPosY) + dy;
-                        pixels.insert_or_assign({ x, y }, new Pixel(Pixel::Type::Sand));
+                        pixels.insert_or_assign({ x, y }, std::make_shared<Pixel>(particleDrawType));
                     }
                 }
             }
@@ -425,7 +426,7 @@ void Pixels::Update(Window &wnd, float dt) {
 
         // std::cout << pixPosX << " " << pixPosY << " " << removed << std::endl;
     }
-    if (wnd.mouse.RightIsPressed()) {
+    if (wnd.mouse.RightIsPressed() && !ImGui::IsAnyItemActive()) {
         const auto [mouseX, mouseY] = wnd.mouse.GetPos();
 
         const int gridPosX = mouseX / static_cast<int>(PixelSize);
@@ -452,10 +453,17 @@ void Pixels::Update(Window &wnd, float dt) {
     std::random_device rd; // obtain a random number from hardware
     std::mt19937 gen(rd()); // seed the generator
     std::uniform_int_distribution<> range(-1, 1); // define the range
+    std::uniform_int_distribution<> shouldSidewaysMove(0, 1); // define the range
 
-    std::map<Position, Pixel*> newPixels = pixels;
+    std::map<Position, std::shared_ptr<Pixel>> newPixels = pixels;
 
     for (const auto& [pos, pix] : newPixels) {
+        // First check if pixel is out of bounds of the grid
+        if ( (pos.y < 0 || pos.x < 0) || (pos.y > GridHeight || pos.x > GridWidth) ) {
+            pixels.erase(pos);
+            continue;
+        }
+
         // Limit pixels from going off the bottom of the screen
         // later we put pixel at top of screen
         Position newPos = pos;
@@ -469,7 +477,11 @@ void Pixels::Update(Window &wnd, float dt) {
             newPos.y += 1;
         }
 
-        newPos.x += range(gen);
+        if (shouldSidewaysMove(gen)) {
+            // todo clamp this value so that sand doesnt fall off the sides of the world
+            newPos.x += range(gen);
+        }
+
 
         bool exists = pixels.contains(newPos);
         if (exists) {
@@ -498,6 +510,9 @@ void Pixels::DrawUI(Graphics &gfx) {
             // Update the constant buffer matrix
             UpdateConstantBuffer(gfx);
         }
+
+        ImGui::SliderInt("Draw Type", (int*)&particleDrawType, 1, (int)Pixel::Type::last);
+        ImGui::SliderInt("Draw Size", (int*)&drawSize, 1, 5);
         ImGui::Checkbox("Floor", &BottomStop);
     }
     ImGui::End();
