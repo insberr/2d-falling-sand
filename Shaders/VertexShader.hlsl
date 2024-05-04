@@ -21,7 +21,8 @@ cbuffer Cbuf {
 VSOut main(VSIn input) {
     VSOut vso;
     // mul(float4(pos, 0.0f, 1.0f), transform);
-    vso.pos = mul( float4( input.pos - input.instancePosition, 0.0f, 1.0f), transform );
+    input.pos += input.instancePosition;
+    vso.pos = mul( float4(input.pos, 0.0f, 1.0f), transform );
     vso.color = input.instanceColor;
 
     return vso;

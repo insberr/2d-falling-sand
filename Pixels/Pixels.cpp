@@ -11,7 +11,7 @@
 
 namespace dx = DirectX;
 
-const float PixelSize = 5.0f;
+const float PixelSize = 20.0f;
 const float WindowWidth = 800.0f;
 const float WindowHeight = 600.0f;
 const unsigned int GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
@@ -210,7 +210,13 @@ Pixels::Pixels(Graphics &gfx) {
     };
     const ConstantBuffer cb = {
         .transform = dx::XMMatrixTranspose(
-            dx::XMMatrixScaling((PixelSize / 400.0f), (PixelSize / 300.0f), 1.0f)
+            dx::XMMatrixScaling(PixelSize / 400.0f, PixelSize / 300.0f, 1.0f) *
+            dx::XMMatrixTranslation(
+                // -(1.0f - ( 1.0f / (PixelSize * 2.0f) )),
+                -1.0f + (0.5f / PixelSize),
+                -1.0f + (0.5f / PixelSize),
+                0.0f
+            )
         )
     };
     wrl::ComPtr<ID3D11Buffer> constantBuffer;
