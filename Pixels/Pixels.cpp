@@ -11,7 +11,7 @@
 
 namespace dx = DirectX;
 
-const float PixelSize = 20.0f;
+const float PixelSize = 1.0f;
 const float WindowWidth = 800.0f;
 const float WindowHeight = 600.0f;
 const unsigned int GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
@@ -71,30 +71,31 @@ struct PixelInstance {
 };
 
 Pixels::Pixels(Graphics &gfx) {
-    int lx = 0; // 10.0f
-    int ly = 0;
-    Color lc = { 0, 255, 0, 1 };
+//    // Random Number
+//    std::random_device rd; // obtain a random number from hardware
+//    std::mt19937 gen(rd()); // seed the generator
+//    std::uniform_int_distribution<> range(1, static_cast<int>(Pixel::Type::last) - 1); // define the range
+//
+//    int lx = 0; // 10.0f
+//    int ly = 0;
+//    Color lc = { 0, 255, 0, 1 };
 
-    std::random_device rd; // obtain a random number from hardware
-    std::mt19937 gen(rd()); // seed the generator
-    std::uniform_int_distribution<> range(1, static_cast<int>(Pixel::Type::last) - 1); // define the range
-
-    for (unsigned int i = 0; i < GridWidth * GridHeight; ++i) {
-        auto pixel = new Pixel(static_cast<Pixel::Type>(range(gen)));
-        Position pos = { lx, ly };
-
-
-        pixels.insert(std::pair<Position, Pixel*>(pos, pixel));
-
-        lx += 1;
-        if (lx >= GridWidth) {
-            ly += 1;
-            lx = 0;
-        }
-
-        ++lc.r;
-        --lc.g;
-    }
+//    for (unsigned int i = 0; i < GridWidth * GridHeight; ++i) {
+//        auto pixel = new Pixel(static_cast<Pixel::Type>(range(gen)));
+//        Position pos = { lx, ly };
+//
+//
+//        pixels.insert(std::pair<Position, Pixel*>(pos, pixel));
+//
+//        lx += 1;
+//        if (lx >= GridWidth) {
+//            ly += 1;
+//            lx = 0;
+//        }
+//
+//        ++lc.r;
+//        --lc.g;
+//    }
 
     // Create the vertex buffer
     D3D11_BUFFER_DESC bd = {};
@@ -119,8 +120,8 @@ Pixels::Pixels(Graphics &gfx) {
 
         instances[loopCount] = {
             .worldPosition {
-                static_cast<float>(pos.x),
-                static_cast<float>(pos.y)
+                -(static_cast<float>(pos.x) - (static_cast<float>(GridWidth) / 2.0f) + 0.5f),
+                static_cast<float>(pos.y) - (static_cast<float>(GridHeight) / 2.0f) + 0.5f
             },
             .color {
                 static_cast<float>(color.r) / 255.0f,
@@ -132,10 +133,10 @@ Pixels::Pixels(Graphics &gfx) {
         ++loopCount;
     }
     D3D11_BUFFER_DESC instanceBufferDesc = {};
-    instanceBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    instanceBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
     instanceBufferDesc.ByteWidth = sizeof(PixelInstance) * pixels.size();
     instanceBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    instanceBufferDesc.CPUAccessFlags = 0;
+    instanceBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     instanceBufferDesc.MiscFlags = 0;
     instanceBufferDesc.StructureByteStride = 0;
 
@@ -211,12 +212,13 @@ Pixels::Pixels(Graphics &gfx) {
     const ConstantBuffer cb = {
         .transform = dx::XMMatrixTranspose(
             dx::XMMatrixScaling(PixelSize / 400.0f, PixelSize / 300.0f, 1.0f) *
-            dx::XMMatrixTranslation(
-                // -(1.0f - ( 1.0f / (PixelSize * 2.0f) )),
-                -1.0f + (0.5f / PixelSize),
-                -1.0f + (0.5f / PixelSize),
-                0.0f
-            )
+            dx::XMMatrixRotationZ( 180.0f * (3.14159f / 180.0f ))
+//            dx::XMMatrixTranslation(
+//                // -(1.0f - ( 1.0f / (PixelSize * 2.0f) )),
+//                -1.0f + (0.5f / PixelSize),
+//                -1.0f + (0.5f / PixelSize),
+//                0.0f
+//            )
         )
     };
     wrl::ComPtr<ID3D11Buffer> constantBuffer;
@@ -301,41 +303,43 @@ void Pixels::Draw(Graphics &gfx) {
 //        // Issue the draw command to draw the verticies
 //        gfx.context->DrawIndexed((UINT)std::size(indices), 0u, 0u);
 //    }
-//    // Instance Buffer (Might want to update this every frame??)
-//    auto instances = new PixelInstance[pixels.size()];
-//    unsigned loopCount = 0;
-//    for (const auto& [pos, pix] : pixels) {
-//        const auto color = ColorForPixel(*pix);
-//
-//        instances[loopCount] = {
-//                .worldPosition {
-//                        static_cast<float>(pos.x),
-//                        static_cast<float>(pos.y)
-//                },
-//                .color {
-//                        static_cast<float>(color.r) / 255.0f,
-//                        static_cast<float>(color.g) / 255.0f,
-//                        static_cast<float>(color.b) / 255.0f,
-//                        static_cast<float>(color.a) / 255.0f
-//                }
-//        };
-//        ++loopCount;
-//    }
-//    D3D11_BUFFER_DESC instanceBufferDesc = {};
-//    instanceBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-//    instanceBufferDesc.ByteWidth = sizeof(PixelInstance) * pixels.size();
-//    instanceBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-//    instanceBufferDesc.CPUAccessFlags = 0;
-//    instanceBufferDesc.MiscFlags = 0;
-//    instanceBufferDesc.StructureByteStride = 0;
-//
-//    D3D11_SUBRESOURCE_DATA instanceData = {};
-//    instanceData.pSysMem = instances; // temp??
-//    instanceData.SysMemPitch = 0;
-//    instanceData.SysMemSlicePitch = 0;
-//    gfx.device->CreateBuffer(&instanceBufferDesc, &instanceData, &instanceBuffer);
-//    delete[] instances;
-//    instances = nullptr;
+
+
+    // Instance Buffer (Might want to update this every frame??)
+    auto instances = new PixelInstance[pixels.size()];
+    unsigned loopCount = 0;
+    for (const auto& [pos, pix] : pixels) {
+        const auto color = ColorForPixel(*pix);
+
+        instances[loopCount] = {
+                .worldPosition {
+                        -(static_cast<float>(pos.x) - (static_cast<float>(GridWidth) / 2.0f) + 0.5f),
+                        static_cast<float>(pos.y) - (static_cast<float>(GridHeight) / 2.0f) + 0.5f
+                },
+                .color {
+                        static_cast<float>(color.r) / 255.0f,
+                        static_cast<float>(color.g) / 255.0f,
+                        static_cast<float>(color.b) / 255.0f,
+                        static_cast<float>(color.a) / 255.0f
+                }
+        };
+        ++loopCount;
+    }
+    D3D11_BUFFER_DESC instanceBufferDesc = {};
+    instanceBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    instanceBufferDesc.ByteWidth = sizeof(PixelInstance) * pixels.size();
+    instanceBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    instanceBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    instanceBufferDesc.MiscFlags = 0;
+    instanceBufferDesc.StructureByteStride = 0;
+
+    D3D11_SUBRESOURCE_DATA instanceData = {};
+    instanceData.pSysMem = instances; // temp??
+    instanceData.SysMemPitch = 0;
+    instanceData.SysMemSlicePitch = 0;
+    gfx.device->CreateBuffer(&instanceBufferDesc, &instanceData, &instanceBuffer);
+    delete[] instances;
+    instances = nullptr;
 
     // const UINT stride = sizeof(Vertex);
     unsigned int strides[2] = {
@@ -438,10 +442,15 @@ void Pixels::Update(Window &wnd, float dt) {
 
     stepTime -= dt;
     if (stepTime <= 0.0f) {
-        stepTime = 0.1f;
+        stepTime = stepSpeed;
     } else {
         return;
     }
+
+    // Random Number
+    std::random_device rd; // obtain a random number from hardware
+    std::mt19937 gen(rd()); // seed the generator
+    std::uniform_int_distribution<> range(-1, 1); // define the range
 
     std::map<Position, Pixel*> newPixels = pixels;
 
@@ -458,6 +467,8 @@ void Pixels::Update(Window &wnd, float dt) {
         } else {
             newPos.y += 1;
         }
+
+        newPos.x += range(gen);
 
         bool exists = pixels.contains(newPos);
         if (exists) {

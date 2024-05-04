@@ -68,9 +68,12 @@ public:
 
     ~Pixels();
 private:
+    // Graphics Buffers
     wrl::ComPtr<ID3D11Buffer> vertexBuffer;
     wrl::ComPtr<ID3D11Buffer> instanceBuffer;
 
+    // The pixels and simulation
     std::map<Position, Pixel*> pixels;
-    float stepTime{0.1f};
+    float stepSpeed{0.01f};
+    float stepTime{stepSpeed};
 };
