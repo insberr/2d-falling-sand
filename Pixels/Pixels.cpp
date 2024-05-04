@@ -487,6 +487,8 @@ void Pixels::Update(Window &wnd, float dt) {
 }
 
 void Pixels::DrawUI(Graphics &gfx) {
+    ImGui::ShowDemoWindow();
+
     if (ImGui::Begin("Simulation Controls")) {
         if (ImGui::SliderFloat("Particle Size", &PixelSize, 1.0f, 100.0f)) {
             // Recalculate the grid size

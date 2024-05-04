@@ -76,6 +76,7 @@ private:
     // Simulation controls
     float PixelSize = 1.0f;
     bool BottomStop = true;
+    Pixel::Type particleDrawType{Pixel::Type::Sand};
     // Constants calculated based on simulation controls
     unsigned int GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
     unsigned int GridHeight = static_cast<unsigned int>(WindowHeight / PixelSize);
