@@ -487,10 +487,10 @@ void Pixels::Update(Window &wnd, float dt) {
 }
 
 void Pixels::DrawUI(Graphics &gfx) {
-    ImGui::ShowDemoWindow();
-
     if (ImGui::Begin("Simulation Controls")) {
-        if (ImGui::SliderFloat("Particle Size", &PixelSize, 1.0f, 100.0f)) {
+        int pixelSizeInt = static_cast<int>(PixelSize);
+        if (ImGui::SliderInt("Particle Size", &pixelSizeInt, 1, 100)) {
+            PixelSize = static_cast<float>(pixelSizeInt);
             // Recalculate the grid size
             GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
             GridHeight = static_cast<unsigned int>(WindowHeight / PixelSize);
