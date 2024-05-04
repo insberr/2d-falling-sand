@@ -6,6 +6,7 @@
 
 #include "../Graphics.h"
 #include "../Window.h"
+#include "../EngineTimer.h"
 #include <map>
 
 namespace wrl = Microsoft::WRL;
@@ -76,4 +77,8 @@ private:
     std::map<Position, Pixel*> pixels;
     float stepSpeed{0.01f};
     float stepTime{stepSpeed};
+
+    // Speed Monitoring
+    EngineTimer updateTime;
+    EngineTimer renderTime;
 };
