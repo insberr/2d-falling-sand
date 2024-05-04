@@ -9,7 +9,6 @@
 #include <iostream>
 #include <cmath>
 
-namespace wrl = Microsoft::WRL;
 namespace dx = DirectX;
 
 const float PixelSize = 5.0f;
@@ -58,6 +57,19 @@ const unsigned short indices[] = {
         2, 1, 3
 };
 
+struct PixelInstance {
+    struct {
+        float x;
+        float y;
+    } worldPosition;
+    struct {
+        float r;
+        float g;
+        float b;
+        float a;
+    } color;
+};
+
 Pixels::Pixels(Graphics &gfx) {
     int lx = 0; // 10.0f
     int ly = 0;
@@ -67,25 +79,24 @@ Pixels::Pixels(Graphics &gfx) {
     std::mt19937 gen(rd()); // seed the generator
     std::uniform_int_distribution<> range(1, static_cast<int>(Pixel::Type::last) - 1); // define the range
 
-//    for (unsigned int i = 0; i < GridWidth * GridHeight; ++i) {
-//        auto pixel = new Pixel(static_cast<Pixel::Type>(range(gen)));
-//        Position pos = { lx, ly };
-//
-//
-//        pixels.insert(std::pair<Position, Pixel*>(pos, pixel));
-//
-//        lx += 1;
-//        if (lx >= GridWidth) {
-//            ly += 1;
-//            lx = 0;
-//        }
-//
-//        ++lc.r;
-//        --lc.g;
-//    }
+    for (unsigned int i = 0; i < GridWidth * GridHeight; ++i) {
+        auto pixel = new Pixel(static_cast<Pixel::Type>(range(gen)));
+        Position pos = { lx, ly };
+
+
+        pixels.insert(std::pair<Position, Pixel*>(pos, pixel));
+
+        lx += 1;
+        if (lx >= GridWidth) {
+            ly += 1;
+            lx = 0;
+        }
+
+        ++lc.r;
+        --lc.g;
+    }
 
     // Create the vertex buffer
-    wrl::ComPtr<ID3D11Buffer> vertexBuffer;
     D3D11_BUFFER_DESC bd = {};
     bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     bd.Usage = D3D11_USAGE_DEFAULT;
@@ -99,10 +110,41 @@ Pixels::Pixels(Graphics &gfx) {
 
     gfx.device->CreateBuffer(&bd, &sd, &vertexBuffer);
 
-    const UINT stride = sizeof(Vertex);
-    const UINT offset = 0u;
-    // Set buffer to pipeline
-    gfx.context->IASetVertexBuffers(0, 1u, vertexBuffer.GetAddressOf(), &stride, &offset);
+
+    // Instance Buffer (Might want to update this every frame??)
+    auto instances = new PixelInstance[pixels.size()];
+    unsigned loopCount = 0;
+    for (const auto& [pos, pix] : pixels) {
+        instances[loopCount] = {
+            .worldPosition {
+                100.0f,
+                100.0f
+            },
+            .color {
+                1.0f,
+                1.0f,
+                1.0f,
+                1.0f
+            }
+        };
+        ++loopCount;
+    }
+    D3D11_BUFFER_DESC instanceBufferDesc = {};
+    instanceBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+    instanceBufferDesc.ByteWidth = sizeof(PixelInstance) * pixels.size();
+    instanceBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    instanceBufferDesc.CPUAccessFlags = 0;
+    instanceBufferDesc.MiscFlags = 0;
+    instanceBufferDesc.StructureByteStride = 0;
+
+    D3D11_SUBRESOURCE_DATA instanceData = {};
+    instanceData.pSysMem = instances; // temp??
+    instanceData.SysMemPitch = 0;
+    instanceData.SysMemSlicePitch = 0;
+    gfx.device->CreateBuffer(&instanceBufferDesc, &instanceData, &instanceBuffer);
+    delete[] instances;
+    instances = nullptr;
+
 
     // Create Index buffer
     wrl::ComPtr<ID3D11Buffer> indexBuffer;
@@ -142,7 +184,10 @@ Pixels::Pixels(Graphics &gfx) {
     wrl::ComPtr<ID3D11InputLayout> inputLayout;
     const D3D11_INPUT_ELEMENT_DESC ied[] = {
             { "Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 8u, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+            { "Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 8u, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+
+            { "InstancePosition", 1, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "InstanceColor", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 8u, D3D11_INPUT_PER_INSTANCE_DATA, 1 }
     };
     // Create Layout
     gfx.device->CreateInputLayout(
@@ -183,44 +228,56 @@ struct ConstantBuffer {
 };
 
 void Pixels::Draw(Graphics &gfx) const {
-    for (const auto& [pos, pixel] : pixels) {
-        // Create a constant buffer for our transformation matrix
-        // const float scale = 0.1f;
-        const float xpos = ((pos.x * PixelSize) + (PixelSize / 2)) / 400.0f - 1.0f;
-        const float ypos = -((pos.y * PixelSize) + (PixelSize / 2)) / 300.0f + 1.0f;
 
-        const auto colorForPix = ColorForPixel(*pixel);
+//    for (const auto& [pos, pixel] : pixels) {
+//        // Create a constant buffer for our transformation matrix
+//        // const float scale = 0.1f;
+//        const float xpos = ((pos.x * PixelSize) + (PixelSize / 2)) / 400.0f - 1.0f;
+//        const float ypos = -((pos.y * PixelSize) + (PixelSize / 2)) / 300.0f + 1.0f;
+//
+//        const auto colorForPix = ColorForPixel(*pixel);
+//
+//        const ConstantBuffer cb = {
+//            .transform = dx::XMMatrixTranspose(
+//                dx::XMMatrixScaling((PixelSize / 400.0f), (PixelSize / 300.0f), 1.0f) *
+//                dx::XMMatrixTranslation(xpos, ypos, 0.0f)
+//            ),
+//            .color = {
+//                colorForPix.r / 255.0f,
+//                colorForPix.g / 255.0f,
+//                colorForPix.b / 255.0f,
+//                colorForPix.a / 255.0f
+//            }
+//        };
+//        wrl::ComPtr<ID3D11Buffer> constantBuffer;
+//        D3D11_BUFFER_DESC cbd;
+//        cbd.BindFlags = D3D10_BIND_CONSTANT_BUFFER;
+//        cbd.Usage = D3D11_USAGE_DYNAMIC;
+//        cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+//        cbd.MiscFlags = 0u;
+//        cbd.ByteWidth = sizeof(cb);
+//        cbd.StructureByteStride = 0u;
+//        D3D11_SUBRESOURCE_DATA csd = {};
+//        csd.pSysMem = &cb;
+//        gfx.device->CreateBuffer(&cbd, &csd, &constantBuffer);
+//
+//        // Bind constant buffer to vertex shader
+//        gfx.context->VSSetConstantBuffers(0u, 1u, constantBuffer.GetAddressOf());
+//
+//        // Issue the draw command to draw the verticies
+//        gfx.context->DrawIndexed((UINT)std::size(indices), 0u, 0u);
+//    }
 
-        const ConstantBuffer cb = {
-            .transform = dx::XMMatrixTranspose(
-                dx::XMMatrixScaling((PixelSize / 400.0f), (PixelSize / 300.0f), 1.0f) *
-                dx::XMMatrixTranslation(xpos, ypos, 0.0f)
-            ),
-            .color = {
-                colorForPix.r / 255.0f,
-                colorForPix.g / 255.0f,
-                colorForPix.b / 255.0f,
-                colorForPix.a / 255.0f
-            }
-        };
-        wrl::ComPtr<ID3D11Buffer> constantBuffer;
-        D3D11_BUFFER_DESC cbd;
-        cbd.BindFlags = D3D10_BIND_CONSTANT_BUFFER;
-        cbd.Usage = D3D11_USAGE_DYNAMIC;
-        cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        cbd.MiscFlags = 0u;
-        cbd.ByteWidth = sizeof(cb);
-        cbd.StructureByteStride = 0u;
-        D3D11_SUBRESOURCE_DATA csd = {};
-        csd.pSysMem = &cb;
-        gfx.device->CreateBuffer(&cbd, &csd, &constantBuffer);
 
-        // Bind constant buffer to vertex shader
-        gfx.context->VSSetConstantBuffers(0u, 1u, constantBuffer.GetAddressOf());
+    // todo temp
+    const UINT todo = 0;
 
-        // Issue the draw command to draw the verticies
-        gfx.context->DrawIndexed((UINT)std::size(indices), 0u, 0u);
-    }
+    const UINT stride = sizeof(Vertex);
+    const UINT offset = 0u;
+    // Set buffer to pipeline
+    gfx.context->IASetVertexBuffers(0, 1u, vertexBuffer.GetAddressOf(), &stride, &offset);
+
+    gfx.context->DrawIndexedInstanced((UINT)std::size(indices), todo, 0u, 0u, 0u);
 }
 
 Pixels::~Pixels() {

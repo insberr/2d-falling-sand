@@ -8,6 +8,8 @@
 #include "../Window.h"
 #include <map>
 
+namespace wrl = Microsoft::WRL;
+
 struct Color {
     unsigned char r;
     unsigned char g;
@@ -66,6 +68,9 @@ public:
 
     ~Pixels();
 private:
+    wrl::ComPtr<ID3D11Buffer> vertexBuffer;
+    wrl::ComPtr<ID3D11Buffer> instanceBuffer;
+
     std::map<Position, Pixel*> pixels;
     float stepTime{0.1f};
 };
