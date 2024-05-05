@@ -346,52 +346,63 @@ static std::mt19937 gen(rd()); // seed the generator
 static std::uniform_int_distribution<> range(-1, 1); // define the range
 static std::uniform_int_distribution<> shouldSidewaysMove(0, 1); // define the range
 
+static bool drawing = false;
+
 void Pixels::Update(Window &wnd, float dt) {
     updateTime.Mark();
     // if (dt == 0.0f) return;
 
 
-    if (wnd.mouse.LeftIsPressed() && !ImGui::IsAnyItemActive()) {
-        const auto [lmx, lmy] = lastMousePos;
-        const auto [mouseX, mouseY] = wnd.mouse.GetPos();
+    if ((wnd.mouse.LeftIsPressed() || wnd.mouse.RightIsPressed()) && !ImGui::IsAnyItemActive()) {
+        if (!drawing) {
+            lastMousePos = wnd.mouse.GetPos();
+            drawing = true;
+        } else {
+            const auto [lmx, lmy] = lastMousePos;
+            const auto [mouseX, mouseY] = wnd.mouse.GetPos();
 
-        // const int gridPosX = mouseX / static_cast<int>(PixelSize);
-        // const int gridPosY = mouseY / static_cast<int>(PixelSize);
+            // const int gridPosX = mouseX / static_cast<int>(PixelSize);
+            // const int gridPosY = mouseY / static_cast<int>(PixelSize);
 
 //        pixels.insert_or_assign({ gridPosX, gridPosY }, new Pixel(Pixel::Type::Sand));
 
-        // Define the thickness of the drawing
-        int thickness = drawSize; // You can adjust this value to increase or decrease the thickness
+            // Define the thickness of the drawing
+            int thickness = drawSize; // You can adjust this value to increase or decrease the thickness
 
-        float diffMX = mouseX - lmx;
-        float diffMY = mouseY - lmy;
-        float distance = std::sqrtf(diffMX * diffMX + diffMY * diffMY);
+            float diffMX = mouseX - lmx;
+            float diffMY = mouseY - lmy;
+            float distance = std::sqrtf(diffMX * diffMX + diffMY * diffMY);
 
-        int numSteps = static_cast<int>(distance / 1.0f);
-        if (numSteps < 1) numSteps = 1;
+            int numSteps = static_cast<int>(distance / 1.0f);
+            if (numSteps < 1) numSteps = 1;
 
-        // Perform interpolation and update pixels along the path
-        for (int i = 0; i <= numSteps; ++i) {
-            const float interpolateX = lmx + (mouseX - lmx) * (static_cast<float>(i) / numSteps);
-            const float interpolateY = lmy + (mouseY - lmy) * (static_cast<float>(i) / numSteps);
+            // Perform interpolation and update pixels along the path
+            for (int i = 0; i <= numSteps; ++i) {
+                const float interpolateX = lmx + (mouseX - lmx) * (static_cast<float>(i) / numSteps);
+                const float interpolateY = lmy + (mouseY - lmy) * (static_cast<float>(i) / numSteps);
 
-            const float gridPosX = interpolateX / PixelSize;
-            const float gridPosY = interpolateY / PixelSize;
+                const float gridPosX = interpolateX / PixelSize;
+                const float gridPosY = interpolateY / PixelSize;
 
-            if (interpolateX >= 0.0f && interpolateY >= 0.0f) {
-                // Update the pixels in a square around the current position to make the drawing thicker
-                for (int dx = -thickness; dx <= thickness; ++dx) {
-                    for (int dy = -thickness; dy <= thickness; ++dy) {
-                        // where to draw
-                        int x = static_cast<int>(gridPosX) + dx;
-                        int y = static_cast<int>(gridPosY) + dy;
-                        pixels.insert_or_assign({ x, y }, std::make_shared<Pixel>(particleDrawType));
+                if (interpolateX >= 0.0f && interpolateY >= 0.0f) {
+                    // Update the pixels in a square around the current position to make the drawing thicker
+                    for (int dx = -thickness; dx <= thickness; ++dx) {
+                        for (int dy = -thickness; dy <= thickness; ++dy) {
+                            // where to draw
+                            int x = static_cast<int>(gridPosX) + dx;
+                            int y = static_cast<int>(gridPosY) + dy;
+
+                            if (wnd.mouse.LeftIsPressed()) {
+                                pixels.insert_or_assign({x, y}, std::make_shared<Pixel>(particleDrawType));
+                            } else {
+                                size_t removed = pixels.erase({x, y});
+                            }
+                        }
                     }
                 }
             }
-        }
 
-        lastMousePos = std::pair(mouseX, mouseY);
+            lastMousePos = std::pair(mouseX, mouseY);
 //        const int gridPosX = mouseX / static_cast<int>(PixelSize);
 //        const int gridPosY = mouseY / static_cast<int>(PixelSize);
 //
@@ -402,22 +413,33 @@ void Pixels::Update(Window &wnd, float dt) {
 //        pixels.insert_or_assign({ gridPosX, gridPosY }, new Pixel(Pixel::Type::Sand));
 
 
-        // std::cout << pixPosX << " " << pixPosY << " " << removed << std::endl;
+            // std::cout << pixPosX << " " << pixPosY << " " << removed << std::endl;
+        }
+    } else {
+        drawing = false;
     }
-    if (wnd.mouse.RightIsPressed() && !ImGui::IsAnyItemActive()) {
-        const auto [mouseX, mouseY] = wnd.mouse.GetPos();
 
-        const int gridPosX = mouseX / static_cast<int>(PixelSize);
-        const int gridPosY = mouseY / static_cast<int>(PixelSize);
-
-        // const float pixPosX = (gridPosX * 20.0f) + 10.0f;
-        // const float pixPosY = (gridPosY * 20.0f) + 10.0f;
-
-        size_t removed = pixels.erase({ gridPosX, gridPosY });
-        // pixels.insert_or_assign({ pixPosX, pixPosY }, new Pixel(Pixel::Type::Sand));
-
-        // std::cout << pixPosX << " " << pixPosY << " " << removed << std::endl;
-    }
+//    if (wnd.mouse.RightIsPressed() && !ImGui::IsAnyItemActive()) {
+//        if (!drawing) {
+//            lastMousePos = wnd.mouse.GetPos();
+//            drawing = true;
+//        } else {
+//            const auto [mouseX, mouseY] = wnd.mouse.GetPos();
+//
+//            const int gridPosX = mouseX / static_cast<int>(PixelSize);
+//            const int gridPosY = mouseY / static_cast<int>(PixelSize);
+//
+//            // const float pixPosX = (gridPosX * 20.0f) + 10.0f;
+//            // const float pixPosY = (gridPosY * 20.0f) + 10.0f;
+//
+//            size_t removed = pixels.erase({gridPosX, gridPosY});
+//            // pixels.insert_or_assign({ pixPosX, pixPosY }, new Pixel(Pixel::Type::Sand));
+//
+//            // std::cout << pixPosX << " " << pixPosY << " " << removed << std::endl;
+//        }
+//    } else {
+//        drawing = false;
+//    }
 
     stepTime -= dt;
     if (stepTime <= 0.0f) {
@@ -491,11 +513,11 @@ void Pixels::DrawUI(Graphics &gfx) {
             UpdateConstantBuffer(gfx);
         }
 
-        ImGui::SliderInt("Draw Type", (int*)&particleDrawType, 1, (int)Pixel::Type::last);
-        ImGui::SliderInt("Draw Size", (int*)&drawSize, 1, 5);
+        ImGui::SliderInt("Draw Type", (int*)&particleDrawType, 1, (int)Pixel::Type::last - 1);
+        ImGui::SliderInt("Draw Size", (int*)&drawSize, 0, 10);
         ImGui::Checkbox("Floor", &BottomStop);
-        ImGui::Text("Update Time %.5f", timeTakenUpdate);
-        ImGui::Text("Render Time %.5f", timeTakenRender);
+        ImGui::Text("Update Time %.5f ms", timeTakenUpdate * 1000.0f);
+        ImGui::Text("Render Time %.5f ms", timeTakenRender * 1000.0f);
 
         for (const auto& timing : updateTimings) {
             ImGui::Text(timing.name.c_str(), timing.time);
