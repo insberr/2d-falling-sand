@@ -17,25 +17,6 @@
 
 namespace dx = DirectX;
 
-Color ColorForPixel(const Pixel& pixel) {
-    const auto type = pixel.GetType();
-    switch (type) {
-        case Pixel::Type::Unknown:
-            return { 250, 0, 250, 255 };
-        case Pixel::Type::Sand:
-            // I got the color right on point first try!
-            return { 200, 150, 10, 255 };
-        case Pixel::Type::Water:
-            return { 13, 136, 188, 255 };
-        case Pixel::Type::Lava:
-            return { 239, 103, 23, 255 };
-        case Pixel::Type::Rock:
-            return { 170, 170, 170, 255 };
-        default:
-            return { 250, 0, 250, 255 };
-    }
-}
-
 struct Vertex {
     struct {
         float x;
@@ -54,19 +35,6 @@ const Vertex vertices[] = {
 const unsigned short indices[] = {
         0, 1, 2,
         2, 1, 3
-};
-
-struct PixelInstance {
-    struct {
-        float x;
-        float y;
-    } worldPosition;
-    struct {
-        float r;
-        float g;
-        float b;
-        float a;
-    } color;
 };
 
 Pixels::Pixels(Graphics &gfx) {
@@ -115,7 +83,7 @@ Pixels::Pixels(Graphics &gfx) {
     auto instances = new PixelInstance[pixels.size()];
     unsigned loopCount = 0;
     for (const auto& [pos, pix] : pixels) {
-        const auto color = ColorForPixel(*pix);
+        const auto color = pix->GetColor();
 
         instances[loopCount] = {
             .worldPosition {
@@ -216,8 +184,8 @@ Pixels::Pixels(Graphics &gfx) {
 
     // Configure Viewport
     D3D11_VIEWPORT vp;
-    vp.Width = 800;
-    vp.Height = 600;
+    vp.Width = 1280;
+    vp.Height = 720;
     vp.MinDepth = 0;
     vp.MaxDepth = 1;
     vp.TopLeftX = 0;
@@ -242,7 +210,7 @@ void Pixels::UpdateConstantBuffer(Graphics &gfx) {
     };
     const ConstantBuffer cb = {
         .transform = dx::XMMatrixTranspose(
-            dx::XMMatrixScaling(PixelSize / 400.0f, PixelSize / 300.0f, 1.0f) *
+            dx::XMMatrixScaling(PixelSize / 640.0f, PixelSize / 360.0f, 1.0f) *
             dx::XMMatrixRotationZ( 180.0f * (3.14159f / 180.0f ))
         )
     };
@@ -264,6 +232,7 @@ void Pixels::UpdateConstantBuffer(Graphics &gfx) {
 }
 
 void Pixels::Draw(Graphics &gfx) {
+    renderTime.Mark();
 
 //    for (const auto& [pos, pixel] : pixels) {
 //        // Create a constant buffer for our transformation matrix
@@ -306,40 +275,42 @@ void Pixels::Draw(Graphics &gfx) {
 
 
     // Instance Buffer (Might want to update this every frame??)
-    auto instances = new PixelInstance[pixels.size()];
-    unsigned loopCount = 0;
-    for (const auto& [pos, pix] : pixels) {
-        const auto color = ColorForPixel(*pix);
-
-        instances[loopCount] = {
-                .worldPosition {
-                        -(static_cast<float>(pos.x) - (static_cast<float>(GridWidth) / 2.0f) + 0.5f),
-                        static_cast<float>(pos.y) - (static_cast<float>(GridHeight) / 2.0f) + 0.5f
-                },
-                .color {
-                        static_cast<float>(color.r) / 255.0f,
-                        static_cast<float>(color.g) / 255.0f,
-                        static_cast<float>(color.b) / 255.0f,
-                        static_cast<float>(color.a) / 255.0f
-                }
-        };
-        ++loopCount;
-    }
+//    auto instances = new PixelInstance[pixels.size()];
+//    unsigned loopCount = 0;
+//    for (const auto& [pos, pix] : pixels) {
+//        const auto color = pix->GetColor();
+//
+//        instances[loopCount] = {
+//                .worldPosition {
+//                        -(static_cast<float>(pos.x) - (static_cast<float>(GridWidth) / 2.0f) + 0.5f),
+//                        static_cast<float>(pos.y) - (static_cast<float>(GridHeight) / 2.0f) + 0.5f
+//                },
+//                .color {
+//                        static_cast<float>(color.r) / 255.0f,
+//                        static_cast<float>(color.g) / 255.0f,
+//                        static_cast<float>(color.b) / 255.0f,
+//                        static_cast<float>(color.a) / 255.0f
+//                }
+//        };
+//        ++loopCount;
+//    }
     D3D11_BUFFER_DESC instanceBufferDesc = {};
     instanceBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-    instanceBufferDesc.ByteWidth = sizeof(PixelInstance) * pixels.size();
+    instanceBufferDesc.ByteWidth = sizeof(PixelInstance) * pixelInstances.size();
     instanceBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     instanceBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     instanceBufferDesc.MiscFlags = 0;
     instanceBufferDesc.StructureByteStride = 0;
 
     D3D11_SUBRESOURCE_DATA instanceData = {};
-    instanceData.pSysMem = instances; // temp??
+    instanceData.pSysMem = pixelInstances.data(); // temp??
     instanceData.SysMemPitch = 0;
     instanceData.SysMemSlicePitch = 0;
     gfx.device->CreateBuffer(&instanceBufferDesc, &instanceData, &instanceBuffer);
-    delete[] instances;
-    instances = nullptr;
+    // delete[] instances;
+    // instances = nullptr;
+    pixelInstances.clear();
+    pixelInstances.reserve(pixels.size());
 
     // const UINT stride = sizeof(Vertex);
     unsigned int strides[2] = {
@@ -360,6 +331,7 @@ void Pixels::Draw(Graphics &gfx) {
 
     gfx.context->DrawIndexedInstanced((UINT)std::size(indices), pixels.size(), 0u, 0u, 0u);
 
+    timeTakenRender = renderTime.Mark();
     DrawUI(gfx);
 }
 
@@ -368,8 +340,14 @@ Pixels::~Pixels() {
 }
 
 std::pair<int, int> lastMousePos = std::pair(0, 0);
+// Random Number
+static std::random_device rd; // obtain a random number from hardware
+static std::mt19937 gen(rd()); // seed the generator
+static std::uniform_int_distribution<> range(-1, 1); // define the range
+static std::uniform_int_distribution<> shouldSidewaysMove(0, 1); // define the range
 
 void Pixels::Update(Window &wnd, float dt) {
+    updateTime.Mark();
     // if (dt == 0.0f) return;
 
 
@@ -441,19 +419,13 @@ void Pixels::Update(Window &wnd, float dt) {
         // std::cout << pixPosX << " " << pixPosY << " " << removed << std::endl;
     }
 
-
     stepTime -= dt;
     if (stepTime <= 0.0f) {
         stepTime = stepSpeed;
     } else {
+        timeTakenUpdate = updateTime.Mark();
         return;
     }
-
-    // Random Number
-    std::random_device rd; // obtain a random number from hardware
-    std::mt19937 gen(rd()); // seed the generator
-    std::uniform_int_distribution<> range(-1, 1); // define the range
-    std::uniform_int_distribution<> shouldSidewaysMove(0, 1); // define the range
 
     std::map<Position, std::shared_ptr<Pixel>> newPixels = pixels;
 
@@ -479,23 +451,31 @@ void Pixels::Update(Window &wnd, float dt) {
 
         if (shouldSidewaysMove(gen)) {
             // todo clamp this value so that sand doesnt fall off the sides of the world
-            newPos.x += range(gen);
+            int clamp = min(max(2, newPos.x + range(gen)), GridWidth - 2);
+            newPos.x = clamp;
         }
 
 
         bool exists = pixels.contains(newPos);
         if (exists) {
-            pixels.insert(std::pair(pos, pix));
+            // pixels.insert(std::pair(pos, pix));
+            pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight));
             continue;
         }
 
         auto nodePix = pixels.extract(pos);
         nodePix.key() = newPos;
         pixels.insert(std::move(nodePix));
+        pixelInstances.push_back(pix->GetInstance(newPos, GridWidth, GridHeight));
+        // const auto success = pixels.try_emplace(newPos, pix);
+        // if (success.second) pixels.erase(pos);
+        // pixelInstances.push_back(pix->GetInstance(success.second ? newPos : pos, GridWidth, GridHeight));
 
         // auto [_, worked] = pixels.try_emplace(newPos, pix);
 
     }
+
+    timeTakenUpdate = updateTime.Mark();
 }
 
 void Pixels::DrawUI(Graphics &gfx) {
@@ -514,6 +494,51 @@ void Pixels::DrawUI(Graphics &gfx) {
         ImGui::SliderInt("Draw Type", (int*)&particleDrawType, 1, (int)Pixel::Type::last);
         ImGui::SliderInt("Draw Size", (int*)&drawSize, 1, 5);
         ImGui::Checkbox("Floor", &BottomStop);
+        ImGui::Text("Update Time %.5f", timeTakenUpdate);
+        ImGui::Text("Render Time %.5f", timeTakenRender);
+
+        for (const auto& timing : updateTimings) {
+            ImGui::Text(timing.name.c_str(), timing.time);
+        }
+        updateTimings.clear();
     }
     ImGui::End();
+}
+
+PixelInstance Pixel::GetInstance(const Position& pos, unsigned int GridWidth, unsigned int GridHeight) {
+    {
+        const auto color = GetColor();
+
+        PixelInstance inst = {
+            .worldPosition {
+                    -(static_cast<float>(pos.x) - (static_cast<float>(GridWidth) / 2.0f) + 0.5f),
+                    static_cast<float>(pos.y) - (static_cast<float>(GridHeight) / 2.0f) + 0.5f
+            },
+            .color {
+                    static_cast<float>(color.r) / 255.0f,
+                    static_cast<float>(color.g) / 255.0f,
+                    static_cast<float>(color.b) / 255.0f,
+                    static_cast<float>(color.a) / 255.0f
+            }
+        };
+        return inst;
+    }
+}
+
+Color Pixel::GetColor() {
+    switch (type) {
+        case Pixel::Type::Unknown:
+            return { 250, 0, 250, 255 };
+        case Pixel::Type::Sand:
+            // I got the color right on point first try!
+            return { 200, 150, 10, 255 };
+        case Pixel::Type::Water:
+            return { 13, 136, 188, 255 };
+        case Pixel::Type::Lava:
+            return { 239, 103, 23, 255 };
+        case Pixel::Type::Rock:
+            return { 170, 170, 170, 255 };
+        default:
+            return { 250, 0, 250, 255 };
+    }
 }

@@ -32,6 +32,19 @@ struct Position {
     }
 };
 
+struct PixelInstance {
+    struct {
+        float x;
+        float y;
+    } worldPosition;
+    struct {
+        float r;
+        float g;
+        float b;
+        float a;
+    } color;
+};
+
 class Pixel {
     friend class Pixels;
 public:
@@ -51,11 +64,18 @@ public:
     Type GetType() const {
         return type;
     }
+
+    PixelInstance GetInstance(const Position& pos, unsigned int GridWidth, unsigned int GridHeight);
+
+    Color GetColor();
 private:
     Type type{Type::Unknown};
 };
 
-Color ColorForPixel(const Pixel& pixel);
+struct Timing {
+    std::string name;
+    float time;
+};
 
 class Pixels {
 public:
@@ -71,8 +91,8 @@ public:
 
     ~Pixels();
 private:
-    const float WindowWidth = 800.0f;
-    const float WindowHeight = 600.0f;
+    const float WindowWidth = 1280.0f;
+    const float WindowHeight = 720.0f;
     // Simulation controls
     float PixelSize = 2.0f;
     bool BottomStop = true;
@@ -90,10 +110,14 @@ private:
 
     // The pixels and simulation
     std::map<Position, std::shared_ptr<Pixel>> pixels;
+    std::vector<PixelInstance> pixelInstances;
     float stepSpeed{0.01f};
     float stepTime{stepSpeed};
 
     // Speed Monitoring
     EngineTimer updateTime;
+    float timeTakenUpdate{0.0f};
+    std::vector<Timing>updateTimings;
     EngineTimer renderTime;
+    float timeTakenRender{0.0f};
 };

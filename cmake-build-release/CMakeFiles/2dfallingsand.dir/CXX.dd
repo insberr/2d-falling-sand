@@ -1,0 +1,39 @@
+ninja_dyndep_version = 1.0
+build CMakeFiles\2dfallingsand.dir\main.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\App.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\Window.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\ErrorHandling\EngineException.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\ErrorHandling\dxerr.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\Graphics.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\EngineTimer.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\Input\Keyboard.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\Input\Mouse.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\DxgiInfoManager.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\Pixels\Pixels.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\imgui\imgui_impl_dx11.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\imgui\imgui_demo.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\imgui\imgui_draw.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\imgui\imgui_impl_win32.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\imgui\imgui_tables.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\imgui\imgui_widgets.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\imgui\imgui.cpp.obj: dyndep
+
+build CMakeFiles\2dfallingsand.dir\ImguiManager.cpp.obj: dyndep
+

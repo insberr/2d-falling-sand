@@ -1,0 +1,13 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "CMakeFiles\\2dfallingsand.dir\\imgui\\imgui_impl_win32.cpp.obj",
+            "outputs": [
+                "CMakeFiles\\2dfallingsand.dir\\imgui\\imgui_impl_win32.cpp.obj.ddi"
+            ],
+            "requires": []
+        }
+    ]
+}

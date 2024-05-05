@@ -1,0 +1,13 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "CMakeFiles\\2dfallingsand.dir\\imgui\\imgui_draw.cpp.obj",
+            "outputs": [
+                "CMakeFiles\\2dfallingsand.dir\\imgui\\imgui_draw.cpp.obj.ddi"
+            ],
+            "requires": []
+        }
+    ]
+}
