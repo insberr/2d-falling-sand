@@ -11,7 +11,15 @@
 
 namespace wrl = Microsoft::WRL;
 
+struct NormalizedColor {
+    float r;
+    float g;
+    float b;
+    float a;
+};
+
 struct Color {
+    NormalizedColor normalize() const;
     unsigned char r;
     unsigned char g;
     unsigned char b;
@@ -20,10 +28,11 @@ struct Color {
 
 struct Position {
     Position(int x, int y, int z) : y(y), x(x), z(z) {}
+    Position(float x, float y, float z) : y(y), x(x), z(z) {}
 
-    int y;
-    int x;
-    int z;
+    float y;
+    float x;
+    float z;
     auto operator<=> (const Position& position) const = default;
     // {
     //     if (this->y > position.y && this->x == position.x && this->z == position.z) {
@@ -48,13 +57,7 @@ struct PixelInstance {
         float y;
         float z;
     } worldPosition;
-    struct {
-        float r;
-        float g;
-        float b;
-        float a;
-    } color;
-    // float padding;
+    NormalizedColor color;
 };
 
 class Pixel {
@@ -79,7 +82,7 @@ public:
 
     PixelInstance GetInstance(const Position& pos, unsigned int GridWidth, unsigned int GridHeight, unsigned int GridDepth);
 
-    Color GetColor();
+    Color GetColor() const;
 private:
     Type type{Type::Unknown};
 };
@@ -113,12 +116,13 @@ private:
     float PixelSize = 1.0f;
     bool BottomStop = true;
     // -- Drawing
-    Pixel::Type particleDrawType{Pixel::Type::Sand};
-    unsigned int drawSize{1};
+    Pixel::Type particleDrawType { Pixel::Type::Sand };
+    unsigned int drawSize { 1 };
+    bool drawingEnabled { false };
     // Constants calculated based on simulation controls
-    unsigned int GridWidth =   9 * 5; // static_cast<unsigned int>(WindowWidth / PixelSize);
-    unsigned int GridHeight =  9 * 5; // static_cast<unsigned int>(WindowHeight / PixelSize);
-    unsigned int GridDepth =   9 * 5; // static_cast<unsigned int>(WindowDepth / PixelSize);
+    unsigned int GridWidth  { 9 * 5 };
+    unsigned int GridHeight { 9 * 5 };
+    unsigned int GridDepth  { 9 * 5 };
 
 
     // Graphics Buffers

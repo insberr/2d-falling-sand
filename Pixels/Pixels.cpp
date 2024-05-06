@@ -366,7 +366,9 @@ static std::uniform_int_distribution<> range(-1, 1); // define the range
 static std::uniform_int_distribution<> shouldSidewaysMove(0, 1); // define the range
 
 void Pixels::Update(Window &wnd, float dt) {
+    // Used for tracking the time it takes to run
     updateTime.Mark();
+
     if (dt == 0.0f) {
         timeTakenUpdate = updateTime.Mark();
         return;
@@ -440,6 +442,9 @@ void Pixels::Update(Window &wnd, float dt) {
 
 static bool drawing = false;
 void Pixels::Update_Drawing(Window& wnd) {
+    // Prevent drawing if disabled
+    if (not drawingEnabled) return;
+
     // Return if neither are down
     if (not wnd.mouse.LeftIsPressed() && not wnd.mouse.RightIsPressed()) {
         // We are not drawing
@@ -509,7 +514,7 @@ void Pixels::DrawUI(Graphics &gfx) {
     if (ImGui::Begin("Simulation Controls")) {
         int pixelSizeInt = static_cast<int>(PixelSize);
         if (ImGui::SliderInt("Particle Size", &pixelSizeInt, 1, 100)) {
-            // PixelSize = static_cast<float>(pixelSizeInt);
+            PixelSize = static_cast<float>(pixelSizeInt);
 
             // Update the constant buffer matrix
             UpdateConstantBuffer(gfx);
@@ -521,6 +526,7 @@ void Pixels::DrawUI(Graphics &gfx) {
 
         ImGui::Spacing();
 
+        ImGui::Checkbox("Enable Drawing", &drawingEnabled);
         ImGui::SliderInt("Draw Type", (int*)&particleDrawType, 1, (int)Pixel::Type::last - 1);
         ImGui::SliderInt("Draw Size", (int*)&drawSize, 0, 10);
         ImGui::Checkbox("Floor", &BottomStop);
@@ -540,28 +546,33 @@ void Pixels::DrawUI(Graphics &gfx) {
     ImGui::End();
 }
 
+NormalizedColor Color::normalize() const {
+    return {
+        static_cast<float>(r) / 255.0f,
+        static_cast<float>(g) / 255.0f,
+        static_cast<float>(b) / 255.0f,
+        static_cast<float>(a) / 255.0f
+    };
+}
+
 PixelInstance Pixel::GetInstance(const Position& pos, unsigned int GridWidth, unsigned int GridHeight, unsigned int GridDepth) {
     {
         const auto color = GetColor();
 
         PixelInstance inst = {
             .worldPosition {
-                    -(static_cast<float>(pos.x) - (static_cast<float>(GridWidth) / 2.0f) + 0.5f),
-                    static_cast<float>(pos.y) - (static_cast<float>(GridHeight) / 2.0f) + 0.5f,
-                static_cast<float>(pos.z) - (static_cast<float>(GridDepth) / 2.0f) + 0.5f
+                // We floor them because they render on a grid, but their positions are controlled by physics
+                -(std::floorf(pos.x) - (static_cast<float>(GridWidth) / 2.0f) + 0.5f),
+                std::floorf(pos.y) - (static_cast<float>(GridHeight) / 2.0f) + 0.5f,
+                std::floorf(pos.z) - (static_cast<float>(GridDepth) / 2.0f) + 0.5f
             },
-            .color {
-                    static_cast<float>(color.r) / 255.0f,
-                    static_cast<float>(color.g) / 255.0f,
-                    static_cast<float>(color.b) / 255.0f,
-                    static_cast<float>(color.a) / 255.0f
-            }
+            .color = color.normalize()
         };
         return inst;
     }
 }
 
-Color Pixel::GetColor() {
+Color Pixel::GetColor() const {
     switch (type) {
         case Pixel::Type::Unknown:
             return { 250, 0, 250, 255 };
