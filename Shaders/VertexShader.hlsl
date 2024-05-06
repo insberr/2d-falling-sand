@@ -1,11 +1,11 @@
 
 struct VSIn {
     // Vertex
-    float2 pos: Position;
+    float3 pos: Position;
     float4 color: Color;
 
     // Instance
-    float2 instancePosition: InstancePosition;
+    float3 instancePosition: InstancePosition;
     float4 instanceColor: InstanceColor;
 };
 
@@ -22,8 +22,8 @@ VSOut main(VSIn input) {
     VSOut vso;
     // mul(float4(pos, 0.0f, 1.0f), transform);
     input.pos += input.instancePosition;
-    vso.pos = mul( float4(input.pos, 0.0f, 1.0f), transform );
-    vso.color = input.instanceColor;
+    vso.pos = mul( float4(input.pos, 1.0f), transform );
+    vso.color = input.color; // instanceColor
 
     return vso;
 }

@@ -1,3 +1,0 @@
-C:/Users/jonah/CLionProjects/2dfallingsand/cmake-build-release/CMakeFiles/2dfallingsand.dir
-C:/Users/jonah/CLionProjects/2dfallingsand/cmake-build-release/CMakeFiles/edit_cache.dir
-C:/Users/jonah/CLionProjects/2dfallingsand/cmake-build-release/CMakeFiles/rebuild_cache.dir

@@ -21,20 +21,36 @@ struct Vertex {
     struct {
         float x;
         float y;
+        float z;
     } pos;
     Color color;
 };
 
+const float side = 0.5f;
 const Vertex vertices[] = {
-        { -0.5f,  0.5f, 255,   0,   0, 255 },
-        {  0.5f,  0.5f,   0, 255,   0, 255 },
-        { -0.5f, -0.5f,   0,   0, 255, 255 },
-        {  0.5f, -0.5f, 255, 255, 255, 255 },
+    //    { -0.5f,  0.5f, 0.0f, 255,   0,   0, 255 },
+    //    {  0.5f,  0.5f, 0.0f,   0, 255,   0, 255 },
+    //    { -0.5f, -0.5f, 0.0f,   0,   0, 255, 255 },
+    //    {  0.5f, -0.5f, 0.0f, 255, 255, 255, 255 },
+
+    {-side,-side,-side, 255,   0,   0, 255 }, // 0
+    { side,-side,-side,   0, 255,   0, 255 }, // 1
+    { -side,side,-side,   0,   0, 255, 255 }, // 2
+    { side,side,-side,  255, 255, 255, 255 }, // 3
+    { -side,-side,side, 255,   0,   0, 255 }, // 4
+    { side,-side,side,    0, 255,   0, 255 }, // 5
+    { -side,side,side,    0,   0, 255, 255 }, // 6
+    { side,side,side,   255, 255, 255, 255 }, // 7
+
 };
 
 const unsigned short indices[] = {
-        0, 1, 2,
-        2, 1, 3
+    0,2,1, 2,3,1,
+    1,3,5, 3,7,5,
+    2,6,3, 3,6,7,
+    4,5,7, 4,7,6,
+    0,4,2, 2,4,6,
+    0,1,4, 1,5,4
 };
 
 Pixels::Pixels(Graphics &gfx) {
@@ -88,7 +104,8 @@ Pixels::Pixels(Graphics &gfx) {
         instances[loopCount] = {
             .worldPosition {
                 -(static_cast<float>(pos.x) - (static_cast<float>(GridWidth) / 2.0f) + 0.5f),
-                static_cast<float>(pos.y) - (static_cast<float>(GridHeight) / 2.0f) + 0.5f
+                static_cast<float>(pos.y) - (static_cast<float>(GridHeight) / 2.0f) + 0.5f,
+                static_cast<float>(pos.z) - (static_cast<float>(GridDepth) / 2.0f) + 0.5f
             },
             .color {
                 static_cast<float>(color.r) / 255.0f,
@@ -153,11 +170,11 @@ Pixels::Pixels(Graphics &gfx) {
     // Input (vertex) layout (2d position only)
     wrl::ComPtr<ID3D11InputLayout> inputLayout;
     const D3D11_INPUT_ELEMENT_DESC ied[] = {
-            { "Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 8u, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            { "Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            { "Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 12u, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 
-            { "InstancePosition", 0, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-            { "InstanceColor", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 8u, D3D11_INPUT_PER_INSTANCE_DATA, 1 }
+            { "InstancePosition", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+            { "InstanceColor", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 12u, D3D11_INPUT_PER_INSTANCE_DATA, 1 }
     };
     // Create Layout
     gfx.device->CreateInputLayout(
@@ -210,15 +227,18 @@ void Pixels::UpdateConstantBuffer(Graphics &gfx) {
     };
     const ConstantBuffer cb = {
         .transform = dx::XMMatrixTranspose(
-            dx::XMMatrixScaling(PixelSize / 640.0f, PixelSize / 360.0f, 1.0f) *
-            dx::XMMatrixRotationZ( 180.0f * (3.14159f / 180.0f ))
+            // dx::XMMatrixScaling((16.0f / 9.0f), (16.0f / 9.0f) / 1.0f, 1.0f) *
+            // dx::XMMatrixRotationY( 180.0f * (3.14159f / 180.0f )) *
+            // dx::XMMatrixRotationZ(100.0f * (3.14159f / 180.0f ))
+            gfx.GetCamera() *
+            gfx.GetProjection()
         )
     };
 
     wrl::ComPtr<ID3D11Buffer> constantBuffer;
 
     D3D11_BUFFER_DESC cbd;
-    cbd.BindFlags = D3D10_BIND_CONSTANT_BUFFER;
+    cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     cbd.Usage = D3D11_USAGE_DYNAMIC;
     cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     cbd.MiscFlags = 0u;
@@ -294,6 +314,9 @@ void Pixels::Draw(Graphics &gfx) {
 //        };
 //        ++loopCount;
 //    }
+
+    UpdateConstantBuffer(gfx);
+
     D3D11_BUFFER_DESC instanceBufferDesc = {};
     instanceBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
     instanceBufferDesc.ByteWidth = sizeof(PixelInstance) * pixelInstances.size();
@@ -309,8 +332,8 @@ void Pixels::Draw(Graphics &gfx) {
     gfx.device->CreateBuffer(&instanceBufferDesc, &instanceData, &instanceBuffer);
     // delete[] instances;
     // instances = nullptr;
-    pixelInstances.clear();
-    pixelInstances.reserve(pixels.size());
+    // pixelInstances.clear();
+    // pixelInstances.reserve(pixels.size());
 
     // const UINT stride = sizeof(Vertex);
     unsigned int strides[2] = {
@@ -393,9 +416,9 @@ void Pixels::Update(Window &wnd, float dt) {
                             int y = static_cast<int>(gridPosY) + dy;
 
                             if (wnd.mouse.LeftIsPressed()) {
-                                pixels.insert_or_assign({x, y}, std::make_shared<Pixel>(particleDrawType));
+                                pixels.insert_or_assign({x, y, 0}, std::make_shared<Pixel>(particleDrawType));
                             } else {
-                                size_t removed = pixels.erase({x, y});
+                                size_t removed = pixels.erase({x, y, 0});
                             }
                         }
                     }
@@ -449,6 +472,9 @@ void Pixels::Update(Window &wnd, float dt) {
         return;
     }
 
+    pixelInstances.clear();
+    pixelInstances.reserve(pixels.size());
+
     std::map<Position, std::shared_ptr<Pixel>> newPixels = pixels;
 
     for (const auto& [pos, pix] : newPixels) {
@@ -481,14 +507,14 @@ void Pixels::Update(Window &wnd, float dt) {
         bool exists = pixels.contains(newPos);
         if (exists) {
             // pixels.insert(std::pair(pos, pix));
-            pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight));
+            pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
             continue;
         }
 
         auto nodePix = pixels.extract(pos);
         nodePix.key() = newPos;
         pixels.insert(std::move(nodePix));
-        pixelInstances.push_back(pix->GetInstance(newPos, GridWidth, GridHeight));
+        pixelInstances.push_back(pix->GetInstance(newPos, GridWidth, GridHeight, GridDepth));
         // const auto success = pixels.try_emplace(newPos, pix);
         // if (success.second) pixels.erase(pos);
         // pixelInstances.push_back(pix->GetInstance(success.second ? newPos : pos, GridWidth, GridHeight));
@@ -496,7 +522,7 @@ void Pixels::Update(Window &wnd, float dt) {
         // auto [_, worked] = pixels.try_emplace(newPos, pix);
 
     }
-
+    std::ranges::reverse(pixelInstances.begin(), pixelInstances.end());
     timeTakenUpdate = updateTime.Mark();
 }
 
@@ -527,14 +553,15 @@ void Pixels::DrawUI(Graphics &gfx) {
     ImGui::End();
 }
 
-PixelInstance Pixel::GetInstance(const Position& pos, unsigned int GridWidth, unsigned int GridHeight) {
+PixelInstance Pixel::GetInstance(const Position& pos, unsigned int GridWidth, unsigned int GridHeight, unsigned int GridDepth) {
     {
         const auto color = GetColor();
 
         PixelInstance inst = {
             .worldPosition {
                     -(static_cast<float>(pos.x) - (static_cast<float>(GridWidth) / 2.0f) + 0.5f),
-                    static_cast<float>(pos.y) - (static_cast<float>(GridHeight) / 2.0f) + 0.5f
+                    static_cast<float>(pos.y) - (static_cast<float>(GridHeight) / 2.0f) + 0.5f,
+                static_cast<float>(pos.z) - (static_cast<float>(GridDepth) / 2.0f) + 0.5f
             },
             .color {
                     static_cast<float>(color.r) / 255.0f,

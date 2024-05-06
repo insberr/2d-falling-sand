@@ -26,7 +26,7 @@ App::App()
     wnd( 1280,720,"Falling Sand Simulation" ),
     pxs{wnd.Gfx()}
 {
-    wnd.Gfx().SetProjection( DirectX::XMMatrixPerspectiveLH( 1.0f, 16.0f / 9.0f, 0.5f, 0.0f ) );
+    wnd.Gfx().SetProjection( DirectX::XMMatrixPerspectiveLH( 1.0f, 9.0f / 16.0f, 0.5f, 1000.0f ) );
 }
 
 void App::Update(float dt) {
@@ -36,7 +36,7 @@ void App::Update(float dt) {
 void App::Render(float dt)
 {
     wnd.Gfx().BeginFrame(0.07f, 0.0f, 0.12f);
-    // wnd.Gfx().SetCamera(cam.GetMatrix());
+    wnd.Gfx().SetCamera(cam.GetMatrix());
 //    for (int x = 10; x < 800; x += 20) {
 //        for (int y = 10; y < 600; y += 20) {
 //            wnd.Gfx().DrawRect(x, y);
@@ -59,7 +59,7 @@ void App::Render(float dt)
     ImGui::End();
 
     // Camera controls
-    // cam.SpawnControlWindow();
+    cam.SpawnControlWindow();
 
     // Present the frame to the GPU
     wnd.Gfx().EndFrame();

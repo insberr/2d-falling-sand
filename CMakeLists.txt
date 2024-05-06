@@ -27,6 +27,8 @@ add_executable(2dfallingsand
         DxgiInfoManager.h
         Pixels/Pixels.cpp
         Pixels/Pixels.h
+    Camera.cpp
+    Camera.h
 
         #Imgui
         imgui/imgui_impl_dx11.cpp

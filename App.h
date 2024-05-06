@@ -8,6 +8,7 @@
 #include "EngineTimer.h"
 #include "Pixels/Pixels.h"
 #include "ImguiManager.h"
+#include "Camera.h"
 
 class App {
 public:
@@ -25,6 +26,6 @@ private:
     // std::vector<std::unique_ptr<Drawable>> drawables;
     float speed_factor = 1.0f;
     Pixels pxs;
-    // Camera cam;
+    Camera cam;
     // static constexpr size_t nDrawables = 100;
 };

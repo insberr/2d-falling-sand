@@ -21,8 +21,12 @@ struct Color {
 struct Position {
     int x;
     int y;
+    int z;
     bool operator< (const Position& position) const {
-        if (this->y > position.y) {
+        if (this->z > position.z) {
+            return true;
+        }
+        if (this->z == position.z && this->y < position.y) {
             return true;
         }
         if (this->y == position.y && this->x < position.x) {
@@ -36,6 +40,7 @@ struct PixelInstance {
     struct {
         float x;
         float y;
+        float z;
     } worldPosition;
     struct {
         float r;
@@ -65,7 +70,7 @@ public:
         return type;
     }
 
-    PixelInstance GetInstance(const Position& pos, unsigned int GridWidth, unsigned int GridHeight);
+    PixelInstance GetInstance(const Position& pos, unsigned int GridWidth, unsigned int GridHeight, unsigned int GridDepth);
 
     Color GetColor();
 private:
@@ -93,6 +98,7 @@ public:
 private:
     const float WindowWidth = 1280.0f;
     const float WindowHeight = 720.0f;
+    // const float WindowDepth = 720.0f;
     // Simulation controls
     float PixelSize = 2.0f;
     bool BottomStop = true;
@@ -102,6 +108,7 @@ private:
     // Constants calculated based on simulation controls
     unsigned int GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
     unsigned int GridHeight = static_cast<unsigned int>(WindowHeight / PixelSize);
+    unsigned int GridDepth = 10.0f; // static_cast<unsigned int>(WindowDepth / PixelSize);
 
 
     // Graphics Buffers
