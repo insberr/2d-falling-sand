@@ -115,7 +115,7 @@ private:
     // Constants calculated based on simulation controls
     unsigned int GridWidth =   9 * 5; // static_cast<unsigned int>(WindowWidth / PixelSize);
     unsigned int GridHeight =  9 * 5; // static_cast<unsigned int>(WindowHeight / PixelSize);
-    unsigned int GridDepth =   2; // static_cast<unsigned int>(WindowDepth / PixelSize);
+    unsigned int GridDepth =   9 * 5; // static_cast<unsigned int>(WindowDepth / PixelSize);
 
 
     // Graphics Buffers

@@ -73,11 +73,11 @@ Pixels::Pixels(Graphics &gfx) {
 //    // Random Number
     std::random_device rd; // obtain a random number from hardware
     std::mt19937 gen(rd()); // seed the generator
-    std::uniform_int_distribution<> range(1, static_cast<int>(Pixel::Type::last) - 1); // define the range
+    std::uniform_int_distribution<> range(1, static_cast<int>(Pixel::Type::Water)); // define the range
 
-    for (int lx = 0; lx < GridWidth; ++lx) {
-        for (int ly = 0; ly < GridHeight; ++ly) {
-            for (int lz = 0; lz < GridDepth; ++lz) {
+    for (int lx = 20; lx < 30; ++lx) {
+        for (int ly = 20; ly < 30; ++ly) {
+            for (int lz = 20; lz < 30; ++lz) {
                 auto pixel = new Pixel(static_cast<Pixel::Type>(range(gen)));
                 Position pos = {
                     lx, ly, lz
