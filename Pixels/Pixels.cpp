@@ -107,21 +107,7 @@ Pixels::Pixels(Graphics &gfx) {
     // auto instances = new PixelInstance[pixels.size()];
     // unsigned loopCount = 0;
     for (const auto& [pos, pix] : pixels) {
-        const auto color = pix->GetColor();
-
-        pixelInstances.push_back({
-            .worldPosition {
-                -(static_cast<float>(pos.x) - (static_cast<float>(GridWidth) / 2.0f) + 0.5f),
-                static_cast<float>(pos.y) - (static_cast<float>(GridHeight) / 2.0f) + 0.5f,
-                static_cast<float>(pos.z) - (static_cast<float>(GridDepth) / 2.0f) + 0.5f
-            },
-            .color {
-                static_cast<float>(color.r) / 255.0f,
-                static_cast<float>(color.g) / 255.0f,
-                static_cast<float>(color.b) / 255.0f,
-                static_cast<float>(color.a) / 255.0f
-            }
-        });
+        pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
     }
     D3D11_BUFFER_DESC instanceBufferDesc = {};
     instanceBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -383,9 +369,10 @@ static bool drawing = false;
 
 void Pixels::Update(Window &wnd, float dt) {
     updateTime.Mark();
-    // if (dt == 0.0f) return;
-    // return;
-
+    if (dt == 0.0f) {
+        timeTakenUpdate = updateTime.Mark();
+        return;
+    }
 
     if ((wnd.mouse.LeftIsPressed() || wnd.mouse.RightIsPressed()) && !ImGui::IsAnyItemActive()) {
         if (!drawing) {
@@ -425,7 +412,7 @@ void Pixels::Update(Window &wnd, float dt) {
                             // where to draw
                             int x = static_cast<int>(gridPosX) + dx;
                             int y = static_cast<int>(gridPosY) + dy;
-                            const int z = range(gen);
+                            const int z = 0; // range(gen);
                             if (wnd.mouse.LeftIsPressed()) {
                                 pixels.insert_or_assign(Position{x, y, z}, std::make_shared<Pixel>(particleDrawType));
                             } else {
