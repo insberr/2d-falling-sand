@@ -23,25 +23,31 @@ struct Vertex {
         float y;
         float z;
     } pos;
-    Color color;
 };
 
-const float side = 0.5f;
 const Vertex vertices[] = {
     //    { -0.5f,  0.5f, 0.0f, 255,   0,   0, 255 },
     //    {  0.5f,  0.5f, 0.0f,   0, 255,   0, 255 },
     //    { -0.5f, -0.5f, 0.0f,   0,   0, 255, 255 },
     //    {  0.5f, -0.5f, 0.0f, 255, 255, 255, 255 },
 
-    {-side,-side,-side, 255,   0,   0, 255 }, // 0
-    { side,-side,-side,   0, 255,   0, 255 }, // 1
-    { -side,side,-side,   0,   0, 255, 255 }, // 2
-    { side,side,-side,  255, 255, 255, 255 }, // 3
-    { -side,-side,side, 255,   0,   0, 255 }, // 4
-    { side,-side,side,    0, 255,   0, 255 }, // 5
-    { -side,side,side,    0,   0, 255, 255 }, // 6
-    { side,side,side,   255, 255, 255, 255 }, // 7
+    // {-side,-side,-side, 255,   0,   0, 255 }, // 0
+    // { side,-side,-side,   0, 255,   0, 255 }, // 1
+    // { -side,side,-side,   0,   0, 255, 255 }, // 2
+    // { side,side,-side,  255, 255, 255, 255 }, // 3
+    // { -side,-side,side, 255,   0,   0, 255 }, // 4
+    // { side,-side,side,    0, 255,   0, 255 }, // 5
+    // { -side,side,side,    0,   0, 255, 255 }, // 6
+    // { side,side,side,   255, 255, 255, 255 }, // 7
 
+    { -1.0f, -1.0f, -1.0f },
+    {  1.0f, -1.0f, -1.0f },
+    { -1.0f,  1.0f, -1.0f },
+    {  1.0f,  1.0f, -1.0f },
+    { -1.0f, -1.0f,  1.0f },
+    {  1.0f, -1.0f,  1.0f },
+    { -1.0f,  1.0f,  1.0f },
+    {  1.0f,  1.0f,  1.0f },
 };
 
 const unsigned short indices[] = {
@@ -55,30 +61,22 @@ const unsigned short indices[] = {
 
 Pixels::Pixels(Graphics &gfx) {
 //    // Random Number
-//    std::random_device rd; // obtain a random number from hardware
-//    std::mt19937 gen(rd()); // seed the generator
-//    std::uniform_int_distribution<> range(1, static_cast<int>(Pixel::Type::last) - 1); // define the range
-//
-//    int lx = 0; // 10.0f
-//    int ly = 0;
-//    Color lc = { 0, 255, 0, 1 };
+    std::random_device rd; // obtain a random number from hardware
+    std::mt19937 gen(rd()); // seed the generator
+    std::uniform_int_distribution<> range(1, static_cast<int>(Pixel::Type::last) - 1); // define the range
 
-//    for (unsigned int i = 0; i < GridWidth * GridHeight; ++i) {
-//        auto pixel = new Pixel(static_cast<Pixel::Type>(range(gen)));
-//        Position pos = { lx, ly };
-//
-//
-//        pixels.insert(std::pair<Position, Pixel*>(pos, pixel));
-//
-//        lx += 1;
-//        if (lx >= GridWidth) {
-//            ly += 1;
-//            lx = 0;
-//        }
-//
-//        ++lc.r;
-//        --lc.g;
-//    }
+    for (int lx = 0; lx < GridWidth; ++lx) {
+        for (int ly = 0; ly < GridHeight; ++ly) {
+            for (int lz = 0; lz < GridDepth; ++lz) {
+                auto pixel = new Pixel(static_cast<Pixel::Type>(range(gen)));
+                Position pos = {
+                    lx, ly, lz
+                };
+
+                pixels.insert(std::pair<Position, Pixel*>(pos, pixel));
+            }
+        }
+    }
 
     // Create the vertex buffer
     D3D11_BUFFER_DESC bd = {};
@@ -96,12 +94,12 @@ Pixels::Pixels(Graphics &gfx) {
 
 
     // Instance Buffer (Might want to update this every frame??)
-    auto instances = new PixelInstance[pixels.size()];
-    unsigned loopCount = 0;
+    // auto instances = new PixelInstance[pixels.size()];
+    // unsigned loopCount = 0;
     for (const auto& [pos, pix] : pixels) {
         const auto color = pix->GetColor();
 
-        instances[loopCount] = {
+        pixelInstances.push_back({
             .worldPosition {
                 -(static_cast<float>(pos.x) - (static_cast<float>(GridWidth) / 2.0f) + 0.5f),
                 static_cast<float>(pos.y) - (static_cast<float>(GridHeight) / 2.0f) + 0.5f,
@@ -113,8 +111,7 @@ Pixels::Pixels(Graphics &gfx) {
                 static_cast<float>(color.b) / 255.0f,
                 static_cast<float>(color.a) / 255.0f
             }
-        };
-        ++loopCount;
+        });
     }
     D3D11_BUFFER_DESC instanceBufferDesc = {};
     instanceBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -125,12 +122,12 @@ Pixels::Pixels(Graphics &gfx) {
     instanceBufferDesc.StructureByteStride = 0;
 
     D3D11_SUBRESOURCE_DATA instanceData = {};
-    instanceData.pSysMem = instances; // temp??
+    instanceData.pSysMem = pixelInstances.data(); // temp??
     instanceData.SysMemPitch = 0;
     instanceData.SysMemSlicePitch = 0;
     gfx.device->CreateBuffer(&instanceBufferDesc, &instanceData, &instanceBuffer);
-    delete[] instances;
-    instances = nullptr;
+    // delete[] instances;
+    // instances = nullptr;
 
 
     // Create Index buffer
@@ -147,6 +144,11 @@ Pixels::Pixels(Graphics &gfx) {
     gfx.device->CreateBuffer(&ibd, &isd, &indexBuffer);
 
     gfx.context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0u);
+
+
+    // Set World Transform Matrix Constant Buffer
+    UpdateConstantBuffer(gfx);
+
 
     wrl::ComPtr<ID3DBlob> shaderBlob;
 
@@ -171,7 +173,7 @@ Pixels::Pixels(Graphics &gfx) {
     wrl::ComPtr<ID3D11InputLayout> inputLayout;
     const D3D11_INPUT_ELEMENT_DESC ied[] = {
             { "Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 12u, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            // { "Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 12u, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 
             { "InstancePosition", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
             { "InstanceColor", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 12u, D3D11_INPUT_PER_INSTANCE_DATA, 1 }
@@ -189,25 +191,23 @@ Pixels::Pixels(Graphics &gfx) {
 
 
 
-    // Set World Transform Matrix Constant Buffer
-    UpdateConstantBuffer(gfx);
-
-
     // Bind render target
-    gfx.context->OMSetRenderTargets(1u, gfx.target.GetAddressOf(), nullptr);
+    // Yeah dont do this here, we cause the depth thingy to stop working
+    // gfx.context->OMSetRenderTargets(1u, gfx.target.GetAddressOf(), nullptr);
 
     // Set primitive topology to triangle list
     gfx.context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // Configure Viewport
-    D3D11_VIEWPORT vp;
-    vp.Width = 1280;
-    vp.Height = 720;
-    vp.MinDepth = 0;
-    vp.MaxDepth = 1;
-    vp.TopLeftX = 0;
-    vp.TopLeftY = 0;
-    gfx.context->RSSetViewports(1u, &vp);
+    // Already done
+    // D3D11_VIEWPORT vp;
+    // vp.Width = 1280;
+    // vp.Height = 720;
+    // vp.MinDepth = 0;
+    // vp.MaxDepth = 1;
+    // vp.TopLeftX = 0;
+    // vp.TopLeftY = 0;
+    // gfx.context->RSSetViewports(1u, &vp);
 }
 
 //struct ConstantBuffer {
@@ -374,6 +374,7 @@ static bool drawing = false;
 void Pixels::Update(Window &wnd, float dt) {
     updateTime.Mark();
     // if (dt == 0.0f) return;
+    // return;
 
 
     if ((wnd.mouse.LeftIsPressed() || wnd.mouse.RightIsPressed()) && !ImGui::IsAnyItemActive()) {

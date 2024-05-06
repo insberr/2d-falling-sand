@@ -107,15 +107,15 @@ private:
     // const float WindowHeight = 720.0f;
     // const float WindowDepth = 720.0f;
     // Simulation controls
-    float PixelSize = 2.0f;
+    float PixelSize = 1.0f;
     bool BottomStop = true;
     // -- Drawing
     Pixel::Type particleDrawType{Pixel::Type::Sand};
     unsigned int drawSize{1};
     // Constants calculated based on simulation controls
-    unsigned int GridWidth = 16 * 5; // static_cast<unsigned int>(WindowWidth / PixelSize);
-    unsigned int GridHeight = 9 * 5; // static_cast<unsigned int>(WindowHeight / PixelSize);
-    unsigned int GridDepth = 10.0f; // static_cast<unsigned int>(WindowDepth / PixelSize);
+    unsigned int GridWidth =   9 * 5; // static_cast<unsigned int>(WindowWidth / PixelSize);
+    unsigned int GridHeight =  9 * 5; // static_cast<unsigned int>(WindowHeight / PixelSize);
+    unsigned int GridDepth =   2; // static_cast<unsigned int>(WindowDepth / PixelSize);
 
 
     // Graphics Buffers

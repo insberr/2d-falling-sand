@@ -2,7 +2,7 @@
 struct VSIn {
     // Vertex
     float3 pos: Position;
-    float4 color: Color;
+    // float4 color: Color;
 
     // Instance
     float3 instancePosition: InstancePosition;
