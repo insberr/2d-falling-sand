@@ -48,7 +48,7 @@ void App::Render(float dt)
 
     /* ImGui Stuff */
     if (ImGui::Begin("Simulation")) {
-        // ImGui::SliderFloat("Speed Factor", &speed_factor, -5.0f, 5.0f);
+        ImGui::SliderFloat("Speed Factor", &speed_factor, -5.0f, 5.0f);
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         ImGui::Text("Delta Time %.3f ms", dt * 1000.0f);
         ImGui::Spacing();

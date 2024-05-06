@@ -413,8 +413,8 @@ void Pixels::Update(Window &wnd, float dt) {
 
         if (shouldSidewaysMove(gen)) {
             // todo clamp this value so that sand doesnt fall off the sides of the world
-            int clamp = min(max(2, newPos.x + range(gen)), GridWidth - 2);
-            newPos.x = clamp;
+            float clamp = min(max(2, newPos.x + range(gen)), GridWidth - 2);
+            newPos.x = clamp * dt;
         }
 
 
