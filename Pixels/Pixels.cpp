@@ -377,13 +377,13 @@ void Pixels::Update(Window &wnd, float dt) {
     // Do particle drawing/erasing
     Update_Drawing(wnd);
 
-    stepTime -= dt;
-    if (stepTime <= 0.0f) {
-        stepTime = stepSpeed;
-    } else {
-        timeTakenUpdate = updateTime.Mark();
-        return;
-    }
+    // stepTime -= dt;
+    // if (stepTime <= 0.0f) {
+    //     stepTime = stepSpeed;
+    // } else {
+    //     timeTakenUpdate = updateTime.Mark();
+    //     return;
+    // }
 
     pixelInstances.clear();
     pixelInstances.reserve(pixels.size());
@@ -408,7 +408,7 @@ void Pixels::Update(Window &wnd, float dt) {
                 continue;
             }
         } else {
-            newPos.y += 1;
+            newPos.y += pix->GetVelofity().y * dt;
         }
 
         if (shouldSidewaysMove(gen)) {
@@ -587,5 +587,21 @@ Color Pixel::GetColor() const {
             return { 170, 170, 170, 255 };
         default:
             return { 250, 0, 250, 255 };
+    }
+}
+
+vec3 Pixel::GetVelofity() const {
+    switch (type) {
+        case Pixel::Type::Unknown:
+            return vec3 { 0, 0, 0};
+        case Pixel::Type::Sand:
+        case Pixel::Type::Water:
+            return vec3 { 0, 1, 0};
+        case Pixel::Type::Lava:
+            return vec3 { 0, 0.5, 0};
+        case Pixel::Type::Rock:
+            return vec3 { 0, 02, 0};
+        default:
+            return vec3 { 0, 1, 0};
     }
 }

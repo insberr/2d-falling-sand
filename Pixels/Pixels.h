@@ -60,6 +60,16 @@ struct PixelInstance {
     NormalizedColor color;
 };
 
+struct vec3 {
+    vec3(float x, float y, float z) : x(x), y(y), z(z) {}
+    vec3(float x, float y) : x(x), y(y), z(0.0f) {}
+    explicit vec3(float x) : x(x), y(x), z(x) {}
+
+    float x;
+    float y;
+    float z;
+};
+
 class Pixel {
     friend class Pixels;
 public:
@@ -83,6 +93,7 @@ public:
     PixelInstance GetInstance(const Position& pos, unsigned int GridWidth, unsigned int GridHeight, unsigned int GridDepth);
 
     Color GetColor() const;
+    vec3 GetVelofity() const;
 private:
     Type type{Type::Unknown};
 };
