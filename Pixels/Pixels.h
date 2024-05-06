@@ -98,6 +98,9 @@ public:
     void Update(Window &wnd, float dt);
 
     void UpdateConstantBuffer(Graphics &gfx);
+
+    void Update_Drawing(Window &wnd);
+
     void DrawUI(Graphics &gfx);
     void Draw(Graphics &gfx);
 

@@ -365,8 +365,6 @@ static std::mt19937 gen(rd()); // seed the generator
 static std::uniform_int_distribution<> range(-1, 1); // define the range
 static std::uniform_int_distribution<> shouldSidewaysMove(0, 1); // define the range
 
-static bool drawing = false;
-
 void Pixels::Update(Window &wnd, float dt) {
     updateTime.Mark();
     if (dt == 0.0f) {
@@ -374,93 +372,8 @@ void Pixels::Update(Window &wnd, float dt) {
         return;
     }
 
-    if ((wnd.mouse.LeftIsPressed() || wnd.mouse.RightIsPressed()) && !ImGui::IsAnyItemActive()) {
-        if (!drawing) {
-            lastMousePos = wnd.mouse.GetPos();
-            drawing = true;
-        } else {
-            const auto [lmx, lmy] = lastMousePos;
-            const auto [mouseX, mouseY] = wnd.mouse.GetPos();
-
-            // const int gridPosX = mouseX / static_cast<int>(PixelSize);
-            // const int gridPosY = mouseY / static_cast<int>(PixelSize);
-
-//        pixels.insert_or_assign({ gridPosX, gridPosY }, new Pixel(Pixel::Type::Sand));
-
-            // Define the thickness of the drawing
-            int thickness = drawSize; // You can adjust this value to increase or decrease the thickness
-
-            float diffMX = mouseX - lmx;
-            float diffMY = mouseY - lmy;
-            float distance = std::sqrtf(diffMX * diffMX + diffMY * diffMY);
-
-            int numSteps = static_cast<int>(distance / 1.0f);
-            if (numSteps < 1) numSteps = 1;
-
-            // Perform interpolation and update pixels along the path
-            for (int i = 0; i <= numSteps; ++i) {
-                const float interpolateX = lmx + (mouseX - lmx) * (static_cast<float>(i) / numSteps);
-                const float interpolateY = lmy + (mouseY - lmy) * (static_cast<float>(i) / numSteps);
-
-                const float gridPosX = (interpolateX / GridWidth * PixelSize) * 2.0f;
-                const float gridPosY = (interpolateY / GridHeight * PixelSize) * 2.0f;
-
-                if (interpolateX >= 0.0f && interpolateY >= 0.0f) {
-                    // Update the pixels in a square around the current position to make the drawing thicker
-                    for (int dx = -thickness; dx <= thickness; ++dx) {
-                        for (int dy = -thickness; dy <= thickness; ++dy) {
-                            // where to draw
-                            int x = static_cast<int>(gridPosX) + dx;
-                            int y = static_cast<int>(gridPosY) + dy;
-                            const int z = 0; // range(gen);
-                            if (wnd.mouse.LeftIsPressed()) {
-                                pixels.insert_or_assign(Position{x, y, z}, std::make_shared<Pixel>(particleDrawType));
-                            } else {
-                                size_t removed = pixels.erase(Position{x, y, z});
-                            }
-                        }
-                    }
-                }
-            }
-
-            lastMousePos = std::pair(mouseX, mouseY);
-//        const int gridPosX = mouseX / static_cast<int>(PixelSize);
-//        const int gridPosY = mouseY / static_cast<int>(PixelSize);
-//
-////        const float pixPosX = (gridPosX * 20.0f) + 10.0f;
-////        const float pixPosY = (gridPosY * 20.0f) + 10.0f;
-//
-//        // size_t removed = pixels.erase({ pixPosX, pixPosY });
-//        pixels.insert_or_assign({ gridPosX, gridPosY }, new Pixel(Pixel::Type::Sand));
-
-
-            // std::cout << pixPosX << " " << pixPosY << " " << removed << std::endl;
-        }
-    } else {
-        drawing = false;
-    }
-
-//    if (wnd.mouse.RightIsPressed() && !ImGui::IsAnyItemActive()) {
-//        if (!drawing) {
-//            lastMousePos = wnd.mouse.GetPos();
-//            drawing = true;
-//        } else {
-//            const auto [mouseX, mouseY] = wnd.mouse.GetPos();
-//
-//            const int gridPosX = mouseX / static_cast<int>(PixelSize);
-//            const int gridPosY = mouseY / static_cast<int>(PixelSize);
-//
-//            // const float pixPosX = (gridPosX * 20.0f) + 10.0f;
-//            // const float pixPosY = (gridPosY * 20.0f) + 10.0f;
-//
-//            size_t removed = pixels.erase({gridPosX, gridPosY});
-//            // pixels.insert_or_assign({ pixPosX, pixPosY }, new Pixel(Pixel::Type::Sand));
-//
-//            // std::cout << pixPosX << " " << pixPosY << " " << removed << std::endl;
-//        }
-//    } else {
-//        drawing = false;
-//    }
+    // Do particle drawing/erasing
+    Update_Drawing(wnd);
 
     stepTime -= dt;
     if (stepTime <= 0.0f) {
@@ -523,6 +436,73 @@ void Pixels::Update(Window &wnd, float dt) {
     }
     std::ranges::reverse(pixelInstances.begin(), pixelInstances.end());
     timeTakenUpdate = updateTime.Mark();
+}
+
+static bool drawing = false;
+void Pixels::Update_Drawing(Window& wnd) {
+    // Return if neither are down
+    if (not wnd.mouse.LeftIsPressed() && not wnd.mouse.RightIsPressed()) {
+        // We are not drawing
+        drawing = false;
+        return;
+    }
+    if (ImGui::IsAnyItemActive()) {
+        // We are not drawing
+        drawing = false;
+        return;
+    }
+
+    // If was not drawing last update,
+    // - Set the last mouse pos to current.
+    // - Set drawing variable to true
+    // - Return. Because ImGui::IsAnyActive does not become active till the next frame
+    //     and we don't want to draw yet because we don't know if the interaction is with imgui
+    if (not drawing) {
+        lastMousePos = wnd.mouse.GetPos();
+        drawing = true;
+        return;
+    }
+
+    // Put last mouse position into variables
+    const auto [lastMouseX, lastMouseY] = lastMousePos;
+    // Get current mouse positon, set the last mouse position to it and pull out the values
+    const auto [currentMouseX, currentMouseY] = lastMousePos = wnd.mouse.GetPos();
+
+    // Define the thickness of the drawing
+    const int thickness = static_cast<int>(drawSize); // You can adjust this value to increase or decrease the thickness
+
+    const int diffMX = currentMouseX - lastMouseX;
+    const int diffMY = currentMouseY - lastMouseY;
+    const float distance = std::sqrtf(static_cast<float>(diffMX * diffMX + diffMY * diffMY));
+
+    int numSteps = static_cast<int>(distance);
+    if (numSteps < 1) numSteps = 1;
+
+    // Perform interpolation and update pixels along the path
+    for (int i = 0; i <= numSteps; ++i) {
+        const int interpolateX = lastMouseX + (currentMouseX - lastMouseX) * (i / numSteps);
+        const int interpolateY = lastMouseY + (currentMouseY - lastMouseY) * (i / numSteps);
+
+        const float gridPosX = (interpolateX / GridWidth * PixelSize) * 2.0f;
+        const float gridPosY = (interpolateY / GridHeight * PixelSize) * 2.0f;
+
+        if (interpolateX >= 0.0f && interpolateY >= 0.0f) {
+            // Update the pixels in a square around the current position to make the drawing thicker
+            for (int dx = -thickness; dx <= thickness; ++dx) {
+                for (int dy = -thickness; dy <= thickness; ++dy) {
+                    // where to draw
+                    int x = static_cast<int>(gridPosX) + dx;
+                    int y = static_cast<int>(gridPosY) + dy;
+                    const int z = 0; // range(gen);
+                    if (wnd.mouse.LeftIsPressed()) {
+                        pixels.insert_or_assign(Position{x, y, z}, std::make_shared<Pixel>(particleDrawType));
+                    } else {
+                        size_t removed = pixels.erase(Position{x, y, z});
+                    }
+                }
+            }
+        }
+    }
 }
 
 void Pixels::DrawUI(Graphics &gfx) {
