@@ -529,23 +529,31 @@ void Pixels::DrawUI(Graphics &gfx) {
     if (ImGui::Begin("Simulation Controls")) {
         int pixelSizeInt = static_cast<int>(PixelSize);
         if (ImGui::SliderInt("Particle Size", &pixelSizeInt, 1, 100)) {
-            PixelSize = static_cast<float>(pixelSizeInt);
-            // Recalculate the grid size
-            // GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
-            // GridHeight = static_cast<unsigned int>(WindowHeight / PixelSize);
+            // PixelSize = static_cast<float>(pixelSizeInt);
 
             // Update the constant buffer matrix
             UpdateConstantBuffer(gfx);
         }
 
+        ImGui::SliderInt("Grid Size X", (int*)&GridWidth, 1, 50);
+        ImGui::SliderInt("Grid Size Y", (int*)&GridHeight, 1, 50);
+        ImGui::SliderInt("Grid Size Z", (int*)&GridDepth, 1, 50);
+
+        ImGui::Spacing();
+
         ImGui::SliderInt("Draw Type", (int*)&particleDrawType, 1, (int)Pixel::Type::last - 1);
         ImGui::SliderInt("Draw Size", (int*)&drawSize, 0, 10);
         ImGui::Checkbox("Floor", &BottomStop);
-        ImGui::Text("Update Time %.5f ms", timeTakenUpdate * 1000.0f);
-        ImGui::Text("Render Time %.5f ms", timeTakenRender * 1000.0f);
+    }
+    ImGui::End();
+    
+    if (ImGui::Begin("Simulation Stats")) {
+        ImGui::Text("Number Of Particles: %i", pixels.size());
+        ImGui::Text("Update Time: %.5f ms", timeTakenUpdate * 1000.0f);
+        ImGui::Text("Render Time: %.5f ms", timeTakenRender * 1000.0f);
 
-        for (const auto& timing : updateTimings) {
-            ImGui::Text(timing.name.c_str(), timing.time);
+        for (const auto&[name, time] : updateTimings) {
+            ImGui::Text(name.c_str(), time);
         }
         updateTimings.clear();
     }
