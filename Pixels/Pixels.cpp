@@ -25,6 +25,7 @@ struct Vertex {
     } pos;
 };
 
+const float side = 0.5f;
 const Vertex vertices[] = {
     //    { -0.5f,  0.5f, 0.0f, 255,   0,   0, 255 },
     //    {  0.5f,  0.5f, 0.0f,   0, 255,   0, 255 },
@@ -40,14 +41,23 @@ const Vertex vertices[] = {
     // { -side,side,side,    0,   0, 255, 255 }, // 6
     // { side,side,side,   255, 255, 255, 255 }, // 7
 
-    { -1.0f, -1.0f, -1.0f },
-    {  1.0f, -1.0f, -1.0f },
-    { -1.0f,  1.0f, -1.0f },
-    {  1.0f,  1.0f, -1.0f },
-    { -1.0f, -1.0f,  1.0f },
-    {  1.0f, -1.0f,  1.0f },
-    { -1.0f,  1.0f,  1.0f },
-    {  1.0f,  1.0f,  1.0f },
+    {-side,-side,-side }, // 0
+    { side,-side,-side }, // 1
+    { -side,side,-side }, // 2
+    { side,side,-side }, // 3
+    { -side,-side,side }, // 4
+    { side,-side,side }, // 5
+    { -side,side,side }, // 6
+    { side,side,side }, // 7
+
+    // { -1.0f, -1.0f, -1.0f },
+    // {  1.0f, -1.0f, -1.0f },
+    // { -1.0f,  1.0f, -1.0f },
+    // {  1.0f,  1.0f, -1.0f },
+    // { -1.0f, -1.0f,  1.0f },
+    // {  1.0f, -1.0f,  1.0f },
+    // { -1.0f,  1.0f,  1.0f },
+    // {  1.0f,  1.0f,  1.0f },
 };
 
 const unsigned short indices[] = {
