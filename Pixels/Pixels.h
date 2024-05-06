@@ -19,21 +19,27 @@ struct Color {
 };
 
 struct Position {
-    int x;
+    Position(int x, int y, int z) : y(y), x(x), z(z) {}
+
     int y;
+    int x;
     int z;
-    bool operator< (const Position& position) const {
-        if (this->z > position.z) {
-            return true;
-        }
-        if (this->z == position.z && this->y < position.y) {
-            return true;
-        }
-        if (this->y == position.y && this->x < position.x) {
-            return true;
-        }
-        return false;
-    }
+    auto operator<=> (const Position& position) const = default;
+    // {
+    //     if (this->y > position.y && this->x == position.x && this->z == position.z) {
+    //         return true;
+    //     }
+    //     if (this->y == position.y && this->x < position.x && this->z < position.z) {
+    //         return true;
+    //     }
+    //     if (this->y == position.y && this->x < position.x && this->z == position.z) {
+    //         return true;
+    //     }
+    //     if (this->y == position.y && this->x == position.x && this->z < position.z) {
+    //         return true;
+    //     }
+    //     return false;
+    // }
 };
 
 struct PixelInstance {
@@ -48,6 +54,7 @@ struct PixelInstance {
         float b;
         float a;
     } color;
+    // float padding;
 };
 
 class Pixel {
@@ -96,8 +103,8 @@ public:
 
     ~Pixels();
 private:
-    const float WindowWidth = 1280.0f;
-    const float WindowHeight = 720.0f;
+    // const float WindowWidth = 1280.0f;
+    // const float WindowHeight = 720.0f;
     // const float WindowDepth = 720.0f;
     // Simulation controls
     float PixelSize = 2.0f;
@@ -106,8 +113,8 @@ private:
     Pixel::Type particleDrawType{Pixel::Type::Sand};
     unsigned int drawSize{1};
     // Constants calculated based on simulation controls
-    unsigned int GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
-    unsigned int GridHeight = static_cast<unsigned int>(WindowHeight / PixelSize);
+    unsigned int GridWidth = 16 * 5; // static_cast<unsigned int>(WindowWidth / PixelSize);
+    unsigned int GridHeight = 9 * 5; // static_cast<unsigned int>(WindowHeight / PixelSize);
     unsigned int GridDepth = 10.0f; // static_cast<unsigned int>(WindowDepth / PixelSize);
 
 

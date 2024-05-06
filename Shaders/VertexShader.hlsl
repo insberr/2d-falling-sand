@@ -23,7 +23,7 @@ VSOut main(VSIn input) {
     // mul(float4(pos, 0.0f, 1.0f), transform);
     input.pos += input.instancePosition;
     vso.pos = mul( float4(input.pos, 1.0f), transform );
-    vso.color = input.color; // instanceColor
+    vso.color = input.instanceColor; // instanceColor
 
     return vso;
 }

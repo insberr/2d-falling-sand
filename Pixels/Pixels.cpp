@@ -227,7 +227,7 @@ void Pixels::UpdateConstantBuffer(Graphics &gfx) {
     };
     const ConstantBuffer cb = {
         .transform = dx::XMMatrixTranspose(
-            // dx::XMMatrixScaling((16.0f / 9.0f), (16.0f / 9.0f) / 1.0f, 1.0f) *
+            dx::XMMatrixScaling(PixelSize, PixelSize, PixelSize) *
             // dx::XMMatrixRotationY( 180.0f * (3.14159f / 180.0f )) *
             // dx::XMMatrixRotationZ(100.0f * (3.14159f / 180.0f ))
             gfx.GetCamera() *
@@ -404,8 +404,8 @@ void Pixels::Update(Window &wnd, float dt) {
                 const float interpolateX = lmx + (mouseX - lmx) * (static_cast<float>(i) / numSteps);
                 const float interpolateY = lmy + (mouseY - lmy) * (static_cast<float>(i) / numSteps);
 
-                const float gridPosX = interpolateX / PixelSize;
-                const float gridPosY = interpolateY / PixelSize;
+                const float gridPosX = (interpolateX / GridWidth * PixelSize) * 2.0f;
+                const float gridPosY = (interpolateY / GridHeight * PixelSize) * 2.0f;
 
                 if (interpolateX >= 0.0f && interpolateY >= 0.0f) {
                     // Update the pixels in a square around the current position to make the drawing thicker
@@ -414,11 +414,11 @@ void Pixels::Update(Window &wnd, float dt) {
                             // where to draw
                             int x = static_cast<int>(gridPosX) + dx;
                             int y = static_cast<int>(gridPosY) + dy;
-
+                            const int z = range(gen);
                             if (wnd.mouse.LeftIsPressed()) {
-                                pixels.insert_or_assign({x, y, 0}, std::make_shared<Pixel>(particleDrawType));
+                                pixels.insert_or_assign(Position{x, y, z}, std::make_shared<Pixel>(particleDrawType));
                             } else {
-                                size_t removed = pixels.erase({x, y, 0});
+                                size_t removed = pixels.erase(Position{x, y, z});
                             }
                         }
                     }
@@ -491,6 +491,7 @@ void Pixels::Update(Window &wnd, float dt) {
         if (pos.y >= GridHeight - 1) {
             newPos.y = 0;
             if (BottomStop) {
+                pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
                 continue;
             }
         } else {
@@ -532,8 +533,8 @@ void Pixels::DrawUI(Graphics &gfx) {
         if (ImGui::SliderInt("Particle Size", &pixelSizeInt, 1, 100)) {
             PixelSize = static_cast<float>(pixelSizeInt);
             // Recalculate the grid size
-            GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
-            GridHeight = static_cast<unsigned int>(WindowHeight / PixelSize);
+            // GridWidth = static_cast<unsigned int>(WindowWidth / PixelSize);
+            // GridHeight = static_cast<unsigned int>(WindowHeight / PixelSize);
 
             // Update the constant buffer matrix
             UpdateConstantBuffer(gfx);
