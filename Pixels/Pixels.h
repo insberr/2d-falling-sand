@@ -65,6 +65,8 @@ struct vec3 {
     vec3(float x, float y) : x(x), y(y), z(0.0f) {}
     explicit vec3(float x) : x(x), y(x), z(x) {}
 
+    vec3 floor() const;
+
     float x;
     float y;
     float z;
@@ -94,6 +96,8 @@ public:
 
     Color GetColor() const;
     vec3 Velocity() const;
+
+    vec3 realPosition { 0 };
 private:
     Type type{Type::Unknown};
 };

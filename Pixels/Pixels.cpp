@@ -391,44 +391,95 @@ void Pixels::Update(Window &wnd, float dt) {
     std::map<Position, std::shared_ptr<Pixel>> newPixels = pixels;
 
     for (const auto& [pos, pix] : newPixels) {
+        vec3 realPos = pix->realPosition;
+        vec3 newRealPos = pix->realPosition;
+
         // First check if pixel is out of bounds of the grid
-        if ( (pos.y < 0 || pos.x < 0) || (pos.y > GridHeight || pos.x > GridWidth) ) {
+        if ( (realPos.y < 0 || realPos.x < 0) || (realPos.y > static_cast<float>(GridHeight) || realPos.x > static_cast<float>(GridWidth)) ) {
             pixels.erase(pos);
             continue;
         }
 
         // Limit pixels from going off the bottom of the screen
         // later we put pixel at top of screen
-        Position newPos = pos;
-
-        if (pos.y >= GridHeight - 1) {
-            newPos.y = 0;
+        if (realPos.y >= static_cast<float>(GridHeight - 1)) {
             if (BottomStop) {
                 pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
                 continue;
             }
+
+            newRealPos.y = 0;
         } else {
-            newPos.y += pix->Velocity().y * dt;
+            // Set new real pos to where we want to go
+            newRealPos.y += pix->Velocity().y * dt;
         }
 
-        if (shouldSidewaysMove(gen)) {
-            // todo clamp this value so that sand doesnt fall off the sides of the world
-            float clamp = min(max(2, newPos.x + range(gen)), GridWidth - 2);
-            newPos.x = clamp * dt;
-        }
+        // Skip x movement for now
 
+        // Create the Grid Position for new real psoition
+        vec3 flooredNewRealPos = newRealPos.floor();
+        Position newGridPos = {
+            flooredNewRealPos.x,
+            flooredNewRealPos.y,
+            flooredNewRealPos.z
+        };
 
-        bool exists = pixels.contains(newPos);
-        if (exists) {
+        // Check to see if we can move there
+        if (pixels.contains(newGridPos)) {
             // pixels.insert(std::pair(pos, pix));
+
+            // Need to set the pixel's real pos to the position it can go given the new real pos
+
+            // Push to instances
             pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
             continue;
         }
 
+        // We can move so do
+        // Set the pixel real pos
+        pix->realPosition = newRealPos;
+
         auto nodePix = pixels.extract(pos);
-        nodePix.key() = newPos;
+        // Set the new grid pos
+        nodePix.key() = newGridPos;
         pixels.insert(std::move(nodePix));
-        pixelInstances.push_back(pix->GetInstance(newPos, GridWidth, GridHeight, GridDepth));
+        // Push to instances
+        pixelInstances.push_back(pix->GetInstance(newGridPos, GridWidth, GridHeight, GridDepth));
+
+//        Position newPos = pos;
+//
+//        if (pos.y >= GridHeight - 1) {
+//            newPos.y = 0;
+//            if (BottomStop) {
+//                pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
+//                continue;
+//            }
+//        } else {
+//            newPos.y += pix->Velocity().y * dt;
+//        }
+//
+//        if (shouldSidewaysMove(gen)) {
+//            // clamp this value so that sand doesnt fall off the sides of the world
+//            float clamp = min(max(2, newPos.x + range(gen)), GridWidth - 2);
+//            newPos.x = clamp * dt;
+//        }
+//
+//
+//        bool exists = pixels.contains(newPos);
+//        if (exists) {
+//            // pixels.insert(std::pair(pos, pix));
+//            pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
+//            continue;
+//        }
+//
+//        auto nodePix = pixels.extract(pos);
+//        nodePix.key() = newPos;
+//        pixels.insert(std::move(nodePix));
+//        pixelInstances.push_back(pix->GetInstance(newPos, GridWidth, GridHeight, GridDepth));
+
+
+// old old old code below
+
         // const auto success = pixels.try_emplace(newPos, pix);
         // if (success.second) pixels.erase(pos);
         // pixelInstances.push_back(pix->GetInstance(success.second ? newPos : pos, GridWidth, GridHeight));
@@ -604,4 +655,12 @@ vec3 Pixel::Velocity() const {
         default:
             return vec3 { 0, 1, 0};
     }
+}
+
+vec3 vec3::floor() const {
+    return {
+        std::floorf(x),
+        std::floorf(y),
+        std::floorf(z)
+    };
 }
