@@ -93,7 +93,7 @@ public:
     PixelInstance GetInstance(const Position& pos, unsigned int GridWidth, unsigned int GridHeight, unsigned int GridDepth);
 
     Color GetColor() const;
-    vec3 GetVelofity() const;
+    vec3 Velocity() const;
 private:
     Type type{Type::Unknown};
 };

@@ -408,7 +408,7 @@ void Pixels::Update(Window &wnd, float dt) {
                 continue;
             }
         } else {
-            newPos.y += pix->GetVelofity().y * dt;
+            newPos.y += pix->Velocity().y * dt;
         }
 
         if (shouldSidewaysMove(gen)) {
@@ -590,7 +590,7 @@ Color Pixel::GetColor() const {
     }
 }
 
-vec3 Pixel::GetVelofity() const {
+vec3 Pixel::Velocity() const {
     switch (type) {
         case Pixel::Type::Unknown:
             return vec3 { 0, 0, 0};
