@@ -17,5 +17,5 @@ private:
     float phi = 0.0f;
     float pitch = 0.0f;
     float yaw = 0.0f;
-    float roll = 3.14159f;
+    float roll = 0.0f;
 };

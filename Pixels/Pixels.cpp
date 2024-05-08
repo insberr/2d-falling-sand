@@ -391,9 +391,9 @@ void Pixels::Update(Window &wnd, float dt) {
     std::map<Position, std::shared_ptr<Pixel>> newPixels = pixels;
 
     for (auto iter = newPixels.rbegin(); iter != newPixels.rend(); ++iter) {
-        // I wnat the y positions in reverse order to prevent the weird stalled movement
+        // I want the y positions in reverse order to prevent the weird stalled movement
         const auto& [pos, pix] = *iter;
-
+    // for (const auto& [pos, pix] : newPixels) {
         vec3 realPos = pix->realPosition;
         vec3 newRealPos = pix->realPosition;
 
@@ -670,14 +670,14 @@ Color Pixel::GetColor() const {
 vec3 Pixel::Velocity() const {
     switch (type) {
         case Pixel::Type::Unknown:
-            return vec3 { 0, 0, 0};
+            return vec3 { 0, 0, 0 };
         case Pixel::Type::Sand:
         case Pixel::Type::Water:
             return vec3 { 0, 1, 0};
         case Pixel::Type::Lava:
             return vec3 { 0, 0.5, 0};
         case Pixel::Type::Rock:
-            return vec3 { 0, 02, 0};
+            return vec3 { 0, 2, 0};
         default:
             return vec3 { 0, 1, 0};
     }
