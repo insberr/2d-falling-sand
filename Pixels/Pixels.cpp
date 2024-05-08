@@ -75,9 +75,9 @@ Pixels::Pixels(Graphics &gfx) {
     std::mt19937 gen(rd()); // seed the generator
     std::uniform_int_distribution<> range(1, static_cast<int>(Pixel::Type::Water)); // define the range
 
-    for (int lx = 20; lx < 30; ++lx) {
-        for (int ly = 20; ly < 30; ++ly) {
-            for (int lz = 20; lz < 30; ++lz) {
+    for (int lx = 20; lx < 25; ++lx) {
+        for (int ly = 20; ly < 25; ++ly) {
+            for (int lz = 20; lz < 25; ++lz) {
                 auto pixel = new Pixel(static_cast<Pixel::Type>(range(gen)));
                 Position pos = {
                     lx, ly, lz
