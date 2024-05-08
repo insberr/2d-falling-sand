@@ -390,7 +390,10 @@ void Pixels::Update(Window &wnd, float dt) {
 
     std::map<Position, std::shared_ptr<Pixel>> newPixels = pixels;
 
-    for (const auto& [pos, pix] : newPixels) {
+    for (auto iter = newPixels.rbegin(); iter != newPixels.rend(); ++iter) {
+        // I wnat the y positions in reverse order to prevent the weird stalled movement
+        const auto& [pos, pix] = *iter;
+
         vec3 realPos = pix->realPosition;
         vec3 newRealPos = pix->realPosition;
 
@@ -436,7 +439,15 @@ void Pixels::Update(Window &wnd, float dt) {
             // pixels.insert(std::pair(pos, pix));
 
             // Need to set the pixel's real pos to the position it can go given the new real pos
-            // pix->realPosition.y;
+            // Doing this removed the weird "scan" effect that is kind of jarring
+            // find out how to make the movement all uniform
+            // *** This is not needed now that we loop in reverse
+//            pix->realPosition = vec3(
+//                pos.x,
+//                pos.y,
+//                pos.z
+//            );
+
             // Push to instances
             pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
             continue;
@@ -494,7 +505,8 @@ void Pixels::Update(Window &wnd, float dt) {
         // auto [_, worked] = pixels.try_emplace(newPos, pix);
 
     }
-    std::ranges::reverse(pixelInstances.begin(), pixelInstances.end());
+
+    // std::ranges::reverse(pixelInstances.begin(), pixelInstances.end());
     timeTakenUpdate = updateTime.Mark();
 }
 

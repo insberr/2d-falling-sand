@@ -30,6 +30,8 @@ struct Position {
     Position(int x, int y, int z) : y(y), x(x), z(z) {}
     Position(float x, float y, float z) : y(y), x(x), z(z) {}
 
+    // Y MUST be first since I want the map to be sorted by y first
+    // This is important for how the particles visually update
     float y;
     float x;
     float z;
