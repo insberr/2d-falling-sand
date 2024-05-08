@@ -66,6 +66,9 @@ struct vec3 {
     explicit vec3(float x) : x(x), y(x), z(x) {}
 
     vec3 floor() const;
+    vec3 ceil() const;
+
+    vec3 operator+(const vec3& rhs) const;
 
     float x;
     float y;
@@ -85,7 +88,13 @@ public:
         last
     };
 
-    Pixel(Type type_): type(type_) {}
+    Pixel(Type type_, Position pos): type(type_) {
+        realPosition = {
+            pos.x,
+            pos.y,
+            pos.z
+        };
+    }
     ~Pixel() = default;
 
     Type GetType() const {

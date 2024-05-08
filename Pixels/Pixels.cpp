@@ -78,12 +78,12 @@ Pixels::Pixels(Graphics &gfx) {
     for (int lx = 20; lx < 25; ++lx) {
         for (int ly = 20; ly < 25; ++ly) {
             for (int lz = 20; lz < 25; ++lz) {
-                auto pixel = new Pixel(static_cast<Pixel::Type>(range(gen)));
                 Position pos = {
-                    lx, ly, lz
+                        lx, ly, lz
                 };
+                auto pixel = std::make_shared<Pixel>(static_cast<Pixel::Type>(range(gen)), pos);
 
-                pixels.insert(std::pair<Position, Pixel*>(pos, pixel));
+                pixels.insert(std::pair<Position, std::shared_ptr<Pixel>>(pos, pixel));
             }
         }
     }
@@ -418,18 +418,25 @@ void Pixels::Update(Window &wnd, float dt) {
 
         // Create the Grid Position for new real psoition
         vec3 flooredNewRealPos = newRealPos.floor();
-        Position newGridPos = {
+        Position newGridPos(
             flooredNewRealPos.x,
             flooredNewRealPos.y,
             flooredNewRealPos.z
-        };
+        );
+
+        // if flooredrealpos == pos, accumulate and continue
+        if (flooredNewRealPos.y == pos.y) {
+            pix->realPosition = newRealPos;
+            pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
+            continue;
+        }
 
         // Check to see if we can move there
         if (pixels.contains(newGridPos)) {
             // pixels.insert(std::pair(pos, pix));
 
             // Need to set the pixel's real pos to the position it can go given the new real pos
-
+            // pix->realPosition.y;
             // Push to instances
             pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
             continue;
@@ -550,8 +557,13 @@ void Pixels::Update_Drawing(Window& wnd) {
                     int x = static_cast<int>(gridPosX) + dx;
                     int y = static_cast<int>(gridPosY) + dy;
                     const int z = 0; // range(gen);
+                    Position pos(
+                        static_cast<int>(gridPosX) + dx,
+                        static_cast<int>(gridPosY) + dy,
+                        0
+                    );
                     if (wnd.mouse.LeftIsPressed()) {
-                        pixels.insert_or_assign(Position{x, y, z}, std::make_shared<Pixel>(particleDrawType));
+                        pixels.insert_or_assign(Position{x, y, z}, std::make_shared<Pixel>(particleDrawType, pos));
                     } else {
                         size_t removed = pixels.erase(Position{x, y, z});
                     }
@@ -562,6 +574,8 @@ void Pixels::Update_Drawing(Window& wnd) {
 }
 
 void Pixels::DrawUI(Graphics &gfx) {
+    ImGui::ShowDemoWindow();
+
     if (ImGui::Begin("Simulation Controls")) {
         int pixelSizeInt = static_cast<int>(PixelSize);
         if (ImGui::SliderInt("Particle Size", &pixelSizeInt, 1, 100)) {
@@ -662,5 +676,21 @@ vec3 vec3::floor() const {
         std::floorf(x),
         std::floorf(y),
         std::floorf(z)
+    };
+}
+
+vec3 vec3::ceil() const {
+    return {
+        std::ceilf(x),
+        std::ceilf(y),
+        std::ceilf(z)
+    };
+}
+
+vec3 vec3::operator+(const vec3 &rhs) const {
+    return {
+        this->x + rhs.x,
+        this->y + rhs.y,
+        this->z + rhs.z
     };
 }
