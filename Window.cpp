@@ -80,6 +80,16 @@ Window::Window(int width, int height, const char *name) noexcept :
 
     // Create graphics object
     pGfx = std::make_unique<Graphics>(hWnd);
+
+    // Register the mouse as a raw input device
+    RAWINPUTDEVICE rid;
+    rid.usUsagePage = 0x01;
+    rid.usUsage = 0x02;
+    rid.dwFlags = 0;
+    rid.hwndTarget = nullptr;
+    if (RegisterRawInputDevices(&rid, 1, sizeof(rid)) == FALSE) {
+        throw CHWND_LAST_EXCEPT();
+    }
 }
 
 Window::~Window() {
@@ -227,45 +237,45 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
         /************** END MOUSE MESSAGES **************/
 
         /************** RAW MOUSE MESSAGES **************/
-//        case WM_INPUT:
-//        {
-//            if( !mouse.RawEnabled() )
-//            {
-//                break;
-//            }
-//            UINT size;
-//            // first get the size of the input data
-//            if( GetRawInputData(
-//                    reinterpret_cast<HRAWINPUT>(lParam),
-//                    RID_INPUT,
-//                    nullptr,
-//                    &size,
-//                    sizeof( RAWINPUTHEADER ) ) == -1)
-//            {
-//                // bail msg processing if error
-//                break;
-//            }
-//            rawBuffer.resize( size );
-//            // read in the input data
-//            if( GetRawInputData(
-//                    reinterpret_cast<HRAWINPUT>(lParam),
-//                    RID_INPUT,
-//                    rawBuffer.data(),
-//                    &size,
-//                    sizeof( RAWINPUTHEADER ) ) != size )
-//            {
-//                // bail msg processing if error
-//                break;
-//            }
-//            // process the raw input data
-//            auto& ri = reinterpret_cast<const RAWINPUT&>(*rawBuffer.data());
-//            if( ri.header.dwType == RIM_TYPEMOUSE &&
-//                (ri.data.mouse.lLastX != 0 || ri.data.mouse.lLastY != 0) )
-//            {
-//                mouse.OnRawDelta( ri.data.mouse.lLastX,ri.data.mouse.lLastY );
-//            }
-//            break;
-//        }
+        case WM_INPUT:
+        {
+            if( !mouse.RawEnabled() )
+            {
+                break;
+            }
+            UINT size;
+            // first get the size of the input data
+            if( GetRawInputData(
+                    reinterpret_cast<HRAWINPUT>(lParam),
+                    RID_INPUT,
+                    nullptr,
+                    &size,
+                    sizeof( RAWINPUTHEADER ) ) == -1)
+            {
+                // bail msg processing if error
+                break;
+            }
+            rawBuffer.resize( size );
+            // read in the input data
+            if( GetRawInputData(
+                    reinterpret_cast<HRAWINPUT>(lParam),
+                    RID_INPUT,
+                    rawBuffer.data(),
+                    &size,
+                    sizeof( RAWINPUTHEADER ) ) != size )
+            {
+                // bail msg processing if error
+                break;
+            }
+            // process the raw input data
+            auto& ri = reinterpret_cast<const RAWINPUT&>(*rawBuffer.data());
+            if( ri.header.dwType == RIM_TYPEMOUSE &&
+                (ri.data.mouse.lLastX != 0 || ri.data.mouse.lLastY != 0) )
+            {
+                mouse.OnRawDelta( ri.data.mouse.lLastX,ri.data.mouse.lLastY );
+            }
+            break;
+        }
         /************** END RAW MOUSE MESSAGES **************/
     }
 
@@ -302,6 +312,51 @@ Graphics &Window::Gfx() {
         throw CHWND_NOGFX_EXCEPT();
     }
     return *pGfx;
+}
+
+void Window::EnableCursor() noexcept {
+    cursorEnabled = true;
+    ShowCursor();
+    EnableImGuiMouse();
+    FreeCursor();
+}
+
+void Window::DisableCursor() noexcept {
+    cursorEnabled = false;
+    HideCursor();
+    DisableImguiMouse();
+    ConfineCursor();
+}
+
+bool Window::CursorEnabled() const noexcept {
+    return cursorEnabled;
+}
+
+void Window::ConfineCursor() noexcept {
+    RECT rect;
+    GetClientRect(hWnd, &rect);
+    MapWindowPoints(hWnd, nullptr, reinterpret_cast<POINT*>(&rect), 2);
+    ClipCursor(&rect);
+}
+
+void Window::FreeCursor() noexcept {
+    ClipCursor(nullptr);
+}
+
+void Window::ShowCursor() noexcept {
+    while ( ::ShowCursor(TRUE) < 0 );
+}
+
+void Window::HideCursor() noexcept {
+    while ( ::ShowCursor(FALSE) >= 0);
+}
+
+void Window::EnableImGuiMouse() noexcept {
+    ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+}
+
+void Window::DisableImguiMouse() noexcept {
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
 }
 
 // Just don't worry about it.

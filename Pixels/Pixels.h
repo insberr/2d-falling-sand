@@ -82,6 +82,8 @@ class Pixel {
 public:
     enum class Type {
         Unknown = 0,
+        Debug,
+        
         Sand,
         Water,
         Lava,

@@ -73,11 +73,11 @@ Pixels::Pixels(Graphics &gfx) {
 //    // Random Number
     std::random_device rd; // obtain a random number from hardware
     std::mt19937 gen(rd()); // seed the generator
-    std::uniform_int_distribution<> range(1, static_cast<int>(Pixel::Type::Water)); // define the range
+    std::uniform_int_distribution<> range(static_cast<int>(Pixel::Type::Sand), static_cast<int>(Pixel::Type::Water)); // define the range
 
-    for (int lx = 20; lx < 25; ++lx) {
-        for (int ly = 20; ly < 25; ++ly) {
-            for (int lz = 20; lz < 25; ++lz) {
+    for (int lx = 1; lx < 6; ++lx) {
+        for (int ly = 10; ly < 15; ++ly) {
+            for (int lz = 1; lz < 6; ++lz) {
                 Position pos = {
                         lx, ly, lz
                 };
@@ -87,6 +87,14 @@ Pixels::Pixels(Graphics &gfx) {
             }
         }
     }
+
+    // Insert debug
+    pixels.insert(
+        std::pair<Position, std::shared_ptr<Pixel>>(
+            Position(0, 0, 0),
+            std::make_shared<Pixel>(Pixel::Type::Debug, Position(0, 0, 0))
+        )
+    );
 
     // Create the vertex buffer
     D3D11_BUFFER_DESC bd = {};
@@ -394,6 +402,12 @@ void Pixels::Update(Window &wnd, float dt) {
         // I want the y positions in reverse order to prevent the weird stalled movement
         const auto& [pos, pix] = *iter;
     // for (const auto& [pos, pix] : newPixels) {
+
+        if (pix->GetType() == Pixel::Type::Debug) {
+            pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
+            continue;
+        }
+
         vec3 realPos = pix->realPosition;
         vec3 newRealPos = pix->realPosition;
 
@@ -586,7 +600,7 @@ void Pixels::Update_Drawing(Window& wnd) {
 }
 
 void Pixels::DrawUI(Graphics &gfx) {
-    ImGui::ShowDemoWindow();
+    // ImGui::ShowDemoWindow();
 
     if (ImGui::Begin("Simulation Controls")) {
         int pixelSizeInt = static_cast<int>(PixelSize);
@@ -639,7 +653,7 @@ PixelInstance Pixel::GetInstance(const Position& pos, unsigned int GridWidth, un
         PixelInstance inst = {
             .worldPosition {
                 // We floor them because they render on a grid, but their positions are controlled by physics
-                -(pos.x - (static_cast<float>(GridWidth) / 2.0f) + 0.5f),
+                pos.x - (static_cast<float>(GridWidth) / 2.0f) + 0.5f,
                 pos.y - (static_cast<float>(GridHeight) / 2.0f) + 0.5f,
                 pos.z - (static_cast<float>(GridDepth) / 2.0f) + 0.5f
             },
@@ -653,6 +667,8 @@ Color Pixel::GetColor() const {
     switch (type) {
         case Pixel::Type::Unknown:
             return { 250, 0, 250, 255 };
+        case Pixel::Type::Debug:
+            return { 250, 0, 0, 255 };
         case Pixel::Type::Sand:
             // I got the color right on point first try!
             return { 200, 150, 10, 255 };
@@ -670,6 +686,7 @@ Color Pixel::GetColor() const {
 vec3 Pixel::Velocity() const {
     switch (type) {
         case Pixel::Type::Unknown:
+        case Pixel::Type::Debug:
             return vec3 { 0, 0, 0 };
         case Pixel::Type::Sand:
         case Pixel::Type::Water:

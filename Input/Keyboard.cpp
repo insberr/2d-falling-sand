@@ -99,6 +99,21 @@ void Keyboard::ClearState() noexcept
     keystates.reset();
 }
 
+bool Keyboard::KeyIsTriggered(unsigned char keycode) noexcept {
+    while( const auto e = ReadKey() )
+    {
+        if(!e->IsPress()) {
+            continue;
+        }
+
+        if (e->GetCode() == keycode) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 template<typename T>
 void Keyboard::TrimBuffer( std::queue<T>& buffer ) noexcept
 {
