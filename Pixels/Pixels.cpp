@@ -532,6 +532,19 @@ void Pixels::Update_Drawing(Window& wnd, Camera& cam) {
     // Prevent drawing if disabled
     if (not drawingEnabled) return;
 
+    // Calculate the position the player is looking at
+    const auto lookVector = cam.GetLookVector();
+    const auto cameraPos = cam.GetPos();
+    vec3 look(lookVector.x, lookVector.y, lookVector.z);
+    vec3 camPos(cameraPos.x, cameraPos.y, cameraPos.z);
+    vec3 lookScaled = look.normalize() * 5.0f;
+    vec3 drawPos = camPos + lookScaled;
+    drawPos = drawPos.floor();
+    Position tempPos(drawPos.x, drawPos.y, drawPos.z);
+    Pixel tempPixel(Pixel::Type::Debug, tempPos);
+    // Add a debug particle at the pos the player is looking at
+    pixelInstances.push_back(tempPixel.GetInstance(tempPos, GridWidth, GridHeight, GridDepth));
+
     // Return if neither are down
     if (not wnd.mouse.LeftIsPressed() && not wnd.mouse.RightIsPressed()) {
         // We are not drawing
@@ -555,30 +568,10 @@ void Pixels::Update_Drawing(Window& wnd, Camera& cam) {
         return;
     }
 
-    const auto lookVector = cam.GetLookVector();
-    const auto cameraPos = cam.GetPos();
-
-    vec3 look(
-            lookVector.x,
-            lookVector.y,
-            lookVector.z
-    );
-    vec3 camPos(
-            cameraPos.x,
-            cameraPos.y,
-            cameraPos.z
-    );
-
-    vec3 lookScaled = look.normalize() * 5.0f;
-    // std::cout << lookScaled.x << " " << lookScaled.y << " " << lookScaled.z << std::endl;
-    vec3 drawPos = camPos + lookScaled;
-
-    // looking.z += looking.normalize().z * 5.0f;
     if (
-            (drawPos.y > 0.0f && drawPos.x > 0.0f && drawPos.z > 0.0f) &&
-            (drawPos.y < static_cast<float>(GridHeight) && drawPos.x < static_cast<float>(GridWidth) && drawPos.z < static_cast<float>(GridDepth))
-            && drawingEnabled
-            ) {
+        (drawPos.y > 0.0f && drawPos.x > 0.0f && drawPos.z > 0.0f) &&
+        (drawPos.y < static_cast<float>(GridHeight) && drawPos.x < static_cast<float>(GridWidth) && drawPos.z < static_cast<float>(GridDepth))
+    ) {
         Position pos(
                 std::floorf(drawPos.x / PixelSize),
                 std::floorf(drawPos.y / PixelSize),
@@ -593,10 +586,6 @@ void Pixels::Update_Drawing(Window& wnd, Camera& cam) {
                             pos.y + dy,
                             pos.z + dz
                     );
-
-                    Pixel tempPixel(Pixel::Type::Debug, posDraw);
-
-                    pixelInstances.push_back(tempPixel.GetInstance(posDraw, GridWidth, GridHeight, GridDepth));
 
                     if (wnd.mouse.LeftIsPressed()) {
                         pixels.insert_or_assign(posDraw, std::make_shared<Pixel>(particleDrawType, posDraw));
@@ -657,20 +646,18 @@ NormalizedColor Color::normalize() const {
 }
 
 PixelInstance Pixel::GetInstance(const Position& pos, unsigned int GridWidth, unsigned int GridHeight, unsigned int GridDepth) {
-    {
-        const auto color = GetColor();
+    const auto color = GetColor();
 
-        PixelInstance inst = {
-            .worldPosition {
-                // We floor them because they render on a grid, but their positions are controlled by physics
-                pos.x, // - (static_cast<float>(GridWidth) / 2.0f) + 0.5f,
-                pos.y, // - (static_cast<float>(GridHeight) / 2.0f) + 0.5f,
-                pos.z// - (static_cast<float>(GridDepth) / 2.0f) + 0.5f
-            },
-            .color = color.normalize()
-        };
-        return inst;
-    }
+    PixelInstance inst = {
+        .worldPosition {
+            // We floor them because they render on a grid, but their positions are controlled by physics
+            pos.x, // - (static_cast<float>(GridWidth) / 2.0f) + 0.5f,
+            pos.y, // - (static_cast<float>(GridHeight) / 2.0f) + 0.5f,
+            pos.z// - (static_cast<float>(GridDepth) / 2.0f) + 0.5f
+        },
+        .color = color.normalize()
+    };
+    return inst;
 }
 
 Color Pixel::GetColor() const {
