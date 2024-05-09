@@ -653,9 +653,9 @@ PixelInstance Pixel::GetInstance(const Position& pos, unsigned int GridWidth, un
         PixelInstance inst = {
             .worldPosition {
                 // We floor them because they render on a grid, but their positions are controlled by physics
-                pos.x - (static_cast<float>(GridWidth) / 2.0f) + 0.5f,
-                pos.y - (static_cast<float>(GridHeight) / 2.0f) + 0.5f,
-                pos.z - (static_cast<float>(GridDepth) / 2.0f) + 0.5f
+                pos.x, // - (static_cast<float>(GridWidth) / 2.0f) + 0.5f,
+                pos.y, // - (static_cast<float>(GridHeight) / 2.0f) + 0.5f,
+                pos.z// - (static_cast<float>(GridDepth) / 2.0f) + 0.5f
             },
             .color = color.normalize()
         };
