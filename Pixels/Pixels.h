@@ -70,8 +70,13 @@ struct vec3 {
 
     vec3 floor() const;
     vec3 ceil() const;
+    vec3 normalize() const;
 
     vec3 operator+(const vec3& rhs) const;
+
+    vec3 operator *(float scale) const;
+    vec3 operator *(const vec3& vec) const;
+    vec3& operator*=(float scale);
 
     float x;
     float y;

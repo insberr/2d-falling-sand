@@ -11,7 +11,7 @@ Camera::Camera() noexcept {
     Reset();
 }
 
-DirectX::XMMATRIX Camera::GetMatrix()noexcept {
+DirectX::XMMATRIX Camera::GetMatrix() noexcept {
     using namespace dx;
 
     const XMVECTOR forwardBaseVector = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
@@ -19,6 +19,7 @@ DirectX::XMMATRIX Camera::GetMatrix()noexcept {
         forwardBaseVector,
         XMMatrixRotationRollPitchYaw(pitch, yaw, 0.0f)
     );
+    XMStoreFloat3(&look, lookVector);
     const auto camPosition = XMLoadFloat3(&pos);
     const auto camTarget = camPosition + lookVector;
     XMStoreFloat3(&target, camTarget);
@@ -78,4 +79,12 @@ void Camera::Translate(DirectX::XMFLOAT3 translation) noexcept {
 
 DirectX::XMFLOAT3 Camera::GetTarget() const noexcept {
     return target;
+}
+
+DirectX::XMFLOAT3 Camera::GetLookVector() const noexcept {
+    return look;
+}
+
+DirectX::XMFLOAT3 Camera::GetPos() const noexcept {
+    return pos;
 }

@@ -23,13 +23,18 @@ public:
     Camera() noexcept;
 
     DirectX::XMMATRIX GetMatrix() noexcept;
-    DirectX::XMFLOAT3 GetTarget() const noexcept;
+
     void SpawnControlWindow() noexcept;
     void Reset() noexcept;
     void Rotate(float dx, float dy) noexcept;
     void Translate(DirectX::XMFLOAT3 translation) noexcept;
+
+    DirectX::XMFLOAT3 GetLookVector() const noexcept;
+    DirectX::XMFLOAT3 GetTarget() const noexcept;
+    DirectX::XMFLOAT3 GetPos() const noexcept;
 private:
     DirectX::XMFLOAT3 pos;
+    DirectX::XMFLOAT3 look;
     DirectX::XMFLOAT3 target;
     float pitch;
     float yaw;

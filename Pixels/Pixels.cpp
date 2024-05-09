@@ -382,11 +382,55 @@ void Pixels::Update(Window &wnd, Camera &cam, float dt) {
         return;
     }
 
+    pixelInstances.clear();
+    pixelInstances.reserve(pixels.size());
+
     // Do particle drawing/erasing
     Update_Drawing(wnd);
 
-    const auto target = cam.GetTarget();
-    // std::cout << target.x << std::endl;
+    const auto lookVector = cam.GetLookVector();
+    const auto cameraPos = cam.GetPos();
+
+    vec3 look(
+        lookVector.x,
+        lookVector.y,
+        lookVector.z
+    );
+    vec3 camPos(
+        cameraPos.x,
+        cameraPos.y,
+        cameraPos.z
+    );
+
+    vec3 lookScaled = look.normalize() * 5.0f;
+    std::cout << lookScaled.x << " " << lookScaled.y << " " << lookScaled.z << std::endl;
+    vec3 drawPos = camPos + lookScaled;
+
+    // looking.z += looking.normalize().z * 5.0f;
+    if ( (drawPos.y > 0.0f || drawPos.x > 0.0f) || (drawPos.y < static_cast<float>(GridHeight) || drawPos.x < static_cast<float>(GridWidth)) ) {
+        Position pos(
+            std::floorf(drawPos.x / PixelSize),
+            std::floorf(drawPos.y / PixelSize),
+            std::floorf(drawPos.z / PixelSize)
+        );
+        const int thickness = drawSize;
+        for (int dx = -thickness; dx <= thickness; ++dx) {
+            for (int dy = -thickness; dy <= thickness; ++dy) {
+                Position posDraw(
+                        pos.x + dx,
+                        pos.y + dy,
+                        pos.z
+                );
+
+                Pixel tempPixel(Pixel::Type::Debug, posDraw);
+
+                pixelInstances.push_back(tempPixel.GetInstance(posDraw, GridWidth, GridHeight, GridDepth));
+                if (wnd.mouse.LeftIsPressed()) {
+                    pixels.insert_or_assign(posDraw, std::make_shared<Pixel>(particleDrawType, posDraw));
+                }
+            }
+        }
+    }
 
     // stepTime -= dt;
     // if (stepTime <= 0.0f) {
@@ -396,8 +440,7 @@ void Pixels::Update(Window &wnd, Camera &cam, float dt) {
     //     return;
     // }
 
-    pixelInstances.clear();
-    pixelInstances.reserve(pixels.size());
+
 
     std::map<Position, std::shared_ptr<Pixel>> newPixels = pixels;
 
@@ -725,5 +768,24 @@ vec3 vec3::operator+(const vec3 &rhs) const {
         this->x + rhs.x,
         this->y + rhs.y,
         this->z + rhs.z
+    };
+}
+
+vec3 vec3::operator*(float scale) const {
+    return vec3{
+        this->x * scale,
+        this->y * scale,
+        this->z * scale
+    };
+}
+
+vec3 vec3::normalize() const {
+    float magnitude = std::sqrtf(
+        (x * x) + (y * y) + (z * z)
+    );
+    return {
+        x * (1 / magnitude),
+        y * (1 / magnitude),
+        z * (1 / magnitude)
     };
 }
