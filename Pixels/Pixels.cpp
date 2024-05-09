@@ -537,7 +537,7 @@ void Pixels::Update_Drawing(Window& wnd, Camera& cam) {
     const auto cameraPos = cam.GetPos();
     vec3 look(lookVector.x, lookVector.y, lookVector.z);
     vec3 camPos(cameraPos.x, cameraPos.y, cameraPos.z);
-    vec3 lookScaled = look.normalize() * 5.0f;
+    vec3 lookScaled = look.normalize() * drawDistance;
     vec3 drawPos = camPos + lookScaled;
     drawPos = drawPos.floor();
     Position tempPos(drawPos.x, drawPos.y, drawPos.z);
@@ -616,10 +616,11 @@ void Pixels::DrawUI(Graphics &gfx) {
 
         ImGui::Spacing();
 
+        ImGui::Checkbox("Floor", &BottomStop);
         ImGui::Checkbox("Enable Drawing", &drawingEnabled);
         ImGui::SliderInt("Draw Type", (int*)&particleDrawType, 1, (int)Pixel::Type::last - 1);
         ImGui::SliderInt("Draw Size", (int*)&drawSize, 0, 10);
-        ImGui::Checkbox("Floor", &BottomStop);
+        ImGui::SliderFloat("Draw Distance", &drawDistance, 0, 20, "%.f");
     }
     ImGui::End();
     

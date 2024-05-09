@@ -153,7 +153,8 @@ private:
     // -- Drawing
     Pixel::Type particleDrawType { Pixel::Type::Sand };
     unsigned int drawSize { 0 };
-    bool drawingEnabled { false };
+    float drawDistance { 5.0f };
+    bool drawingEnabled { true };
     // Constants calculated based on simulation controls
     unsigned int GridWidth  { 9 * 5 };
     unsigned int GridHeight { 9 * 5 };
