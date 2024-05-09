@@ -26,10 +26,10 @@ App::App()
     wnd( 1280,720,"Falling Sand Simulation" ),
     pxs{wnd.Gfx()}
 {
-    wnd.Gfx().SetProjection( DirectX::XMMatrixPerspectiveLH( 1.0f, 9.0f / 16.0f, 0.5f, 200.0f ) );
+    wnd.Gfx().SetProjection( DirectX::XMMatrixPerspectiveLH( 1.0f, 9.0f / 16.0f, 0.5f, 2000.0f ) );
 }
 
-void App::Update(float dt) {
+void App::Update(float dt, float sf_dt) {
     if (wnd.kbd.KeyIsTriggered(VK_ESCAPE)) {
         if( wnd.CursorEnabled() )
         {
@@ -68,7 +68,7 @@ void App::Update(float dt) {
         }
     }
 
-    pxs.Update(wnd, dt);
+    pxs.Update(wnd, cam, sf_dt);
 }
 
 void App::Render(float dt)
@@ -110,7 +110,8 @@ int App::Run()
 {
     while( true )
     {
-        const float dt = timer.Mark() * speed_factor;
+        const float dt = timer.Mark();
+        const float speedFactor_dt = dt * speed_factor;
         // process all messages pending, but to not block for new messages
         if( const auto ecode = Window::ProcessMessages() )
         {
@@ -118,7 +119,7 @@ int App::Run()
             return *ecode;
         }
 
-        Update(dt);
+        Update(dt, speedFactor_dt);
         Render(dt);
 
 

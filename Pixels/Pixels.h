@@ -6,6 +6,7 @@
 
 #include "../Graphics.h"
 #include "../Window.h"
+#include "../Camera.h"
 #include "../EngineTimer.h"
 #include <map>
 
@@ -126,7 +127,7 @@ public:
 
     Pixels();
 
-    void Update(Window &wnd, float dt);
+    void Update(Window &wnd, Camera &cam, float dt);
 
     void UpdateConstantBuffer(Graphics &gfx);
 

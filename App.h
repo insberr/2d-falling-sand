@@ -17,7 +17,8 @@ public:
     int Run();
     ~App();
 private:
-    void Update(float dt);
+    // sf_dt is the delta time with speed factor
+    void Update(float dt, float sf_dt);
     void Render(float dt);
 private:
     ImguiManager imgui;

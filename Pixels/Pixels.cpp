@@ -373,7 +373,7 @@ static std::mt19937 gen(rd()); // seed the generator
 static std::uniform_int_distribution<> range(-1, 1); // define the range
 static std::uniform_int_distribution<> shouldSidewaysMove(0, 1); // define the range
 
-void Pixels::Update(Window &wnd, float dt) {
+void Pixels::Update(Window &wnd, Camera &cam, float dt) {
     // Used for tracking the time it takes to run
     updateTime.Mark();
 
@@ -384,6 +384,9 @@ void Pixels::Update(Window &wnd, float dt) {
 
     // Do particle drawing/erasing
     Update_Drawing(wnd);
+
+    const auto target = cam.GetTarget();
+    // std::cout << target.x << std::endl;
 
     // stepTime -= dt;
     // if (stepTime <= 0.0f) {
@@ -398,10 +401,10 @@ void Pixels::Update(Window &wnd, float dt) {
 
     std::map<Position, std::shared_ptr<Pixel>> newPixels = pixels;
 
-    for (auto iter = newPixels.rbegin(); iter != newPixels.rend(); ++iter) {
+    // for (auto iter = newPixels.rbegin(); iter != newPixels.rend(); ++iter) {
         // I want the y positions in reverse order to prevent the weird stalled movement
-        const auto& [pos, pix] = *iter;
-    // for (const auto& [pos, pix] : newPixels) {
+        // const auto& [pos, pix] = *iter;
+    for (const auto& [pos, pix] : newPixels) {
 
         if (pix->GetType() == Pixel::Type::Debug) {
             pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
@@ -526,6 +529,7 @@ void Pixels::Update(Window &wnd, float dt) {
 
 static bool drawing = false;
 void Pixels::Update_Drawing(Window& wnd) {
+
     // Prevent drawing if disabled
     if (not drawingEnabled) return;
 
@@ -603,9 +607,9 @@ void Pixels::DrawUI(Graphics &gfx) {
     // ImGui::ShowDemoWindow();
 
     if (ImGui::Begin("Simulation Controls")) {
-        int pixelSizeInt = static_cast<int>(PixelSize);
-        if (ImGui::SliderInt("Particle Size", &pixelSizeInt, 1, 100)) {
-            PixelSize = static_cast<float>(pixelSizeInt);
+        // int pixelSizeInt = static_cast<int>(PixelSize);
+        if (ImGui::SliderFloat("Particle Size", &PixelSize, 0.001f, 10.0f, "%.3f")) {
+            // PixelSize = static_cast<float>(pixelSizeInt);
 
             // Update the constant buffer matrix
             UpdateConstantBuffer(gfx);
