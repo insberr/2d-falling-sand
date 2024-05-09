@@ -671,6 +671,8 @@ Color Pixel::GetColor() const {
             return { 200, 150, 10, 255 };
         case Pixel::Type::Water:
             return { 13, 136, 188, 255 };
+        case Pixel::Type::Steam:
+            return { 255, 255, 255, 150 };
         case Pixel::Type::Lava:
             return { 239, 103, 23, 255 };
         case Pixel::Type::Rock:
@@ -688,6 +690,8 @@ vec3 Pixel::Velocity() const {
         case Pixel::Type::Sand:
         case Pixel::Type::Water:
             return vec3 { 0, 9.8f, 0};
+        case Pixel::Type::Steam:
+            return vec3 { 0, -1.0f, 0 };
         case Pixel::Type::Lava:
             return vec3 { 0, 1.0f, 0};
         case Pixel::Type::Rock:

@@ -92,10 +92,11 @@ public:
         
         Sand,
         Water,
+        Steam,
         Lava,
         Rock,
 
-        last
+        last,
     };
 
     Pixel(Type type_, Position pos): type(type_) {
