@@ -388,16 +388,7 @@ void Pixels::Update(Window &wnd, Camera &cam, float dt) {
     // Do particle drawing/erasing
     Update_Drawing(wnd, cam);
 
-    // stepTime -= dt;
-    // if (stepTime <= 0.0f) {
-    //     stepTime = stepSpeed;
-    // } else {
-    //     timeTakenUpdate = updateTime.Mark();
-    //     return;
-    // }
-
-
-
+    // Create a copy of the pixels so we can modify the pixels data without breaking the loop
     std::map<Position, std::shared_ptr<Pixel>> newPixels = pixels;
 
     // for (auto iter = newPixels.rbegin(); iter != newPixels.rend(); ++iter) {
@@ -511,15 +502,6 @@ void Pixels::Update(Window &wnd, Camera &cam, float dt) {
 //        pixels.insert(std::move(nodePix));
 //        pixelInstances.push_back(pix->GetInstance(newPos, GridWidth, GridHeight, GridDepth));
 
-
-// old old old code below
-
-        // const auto success = pixels.try_emplace(newPos, pix);
-        // if (success.second) pixels.erase(pos);
-        // pixelInstances.push_back(pix->GetInstance(success.second ? newPos : pos, GridWidth, GridHeight));
-
-        // auto [_, worked] = pixels.try_emplace(newPos, pix);
-
     }
 
     // std::ranges::reverse(pixelInstances.begin(), pixelInstances.end());
@@ -528,7 +510,6 @@ void Pixels::Update(Window &wnd, Camera &cam, float dt) {
 
 static bool drawing = false;
 void Pixels::Update_Drawing(Window& wnd, Camera& cam) {
-
     // Prevent drawing if disabled
     if (not drawingEnabled) return;
 
@@ -687,13 +668,13 @@ vec3 Pixel::Velocity() const {
             return vec3 { 0, 0, 0 };
         case Pixel::Type::Sand:
         case Pixel::Type::Water:
-            return vec3 { 0, 1, 0};
+            return vec3 { 0, 9.8f, 0};
         case Pixel::Type::Lava:
-            return vec3 { 0, 0.5, 0};
+            return vec3 { 0, 1.0f, 0};
         case Pixel::Type::Rock:
-            return vec3 { 0, 2, 0};
+            return vec3 { 0, 9.8f * 2.0f, 0};
         default:
-            return vec3 { 0, 1, 0};
+            return vec3 { 0, 1.0f, 0};
     }
 }
 

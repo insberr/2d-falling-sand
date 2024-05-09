@@ -151,7 +151,7 @@ private:
     bool BottomStop = true;
     // -- Drawing
     Pixel::Type particleDrawType { Pixel::Type::Sand };
-    unsigned int drawSize { 1 };
+    unsigned int drawSize { 0 };
     bool drawingEnabled { false };
     // Constants calculated based on simulation controls
     unsigned int GridWidth  { 9 * 5 };
@@ -166,8 +166,6 @@ private:
     // The pixels and simulation
     std::map<Position, std::shared_ptr<Pixel>> pixels;
     std::vector<PixelInstance> pixelInstances;
-    float stepSpeed{0.01f};
-    float stepTime{stepSpeed};
 
     // Speed Monitoring
     EngineTimer updateTime;
