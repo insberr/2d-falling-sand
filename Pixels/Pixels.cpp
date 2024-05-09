@@ -398,23 +398,23 @@ void Pixels::Update(Window &wnd, float dt) {
         vec3 newRealPos = pix->realPosition;
 
         // First check if pixel is out of bounds of the grid
-        if ( (realPos.y < 0 || realPos.x < 0) || (realPos.y > static_cast<float>(GridHeight) || realPos.x > static_cast<float>(GridWidth)) ) {
+        if ( (realPos.y < 0.0f || realPos.x < 0.0f) || (realPos.y > static_cast<float>(GridHeight) || realPos.x > static_cast<float>(GridWidth)) ) {
             pixels.erase(pos);
             continue;
         }
 
+        // Set new real pos to where we want to go
+        newRealPos.y -= pix->Velocity().y * dt;
+
         // Limit pixels from going off the bottom of the screen
         // later we put pixel at top of screen
-        if (realPos.y >= static_cast<float>(GridHeight - 1)) {
+        if (newRealPos.y <= 0.0f) {
             if (BottomStop) {
                 pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
                 continue;
             }
 
-            newRealPos.y = 0;
-        } else {
-            // Set new real pos to where we want to go
-            newRealPos.y += pix->Velocity().y * dt;
+            newRealPos.y = static_cast<float>(GridHeight);
         }
 
         // Skip x movement for now
