@@ -386,51 +386,7 @@ void Pixels::Update(Window &wnd, Camera &cam, float dt) {
     pixelInstances.reserve(pixels.size());
 
     // Do particle drawing/erasing
-    Update_Drawing(wnd);
-
-    const auto lookVector = cam.GetLookVector();
-    const auto cameraPos = cam.GetPos();
-
-    vec3 look(
-        lookVector.x,
-        lookVector.y,
-        lookVector.z
-    );
-    vec3 camPos(
-        cameraPos.x,
-        cameraPos.y,
-        cameraPos.z
-    );
-
-    vec3 lookScaled = look.normalize() * 5.0f;
-    std::cout << lookScaled.x << " " << lookScaled.y << " " << lookScaled.z << std::endl;
-    vec3 drawPos = camPos + lookScaled;
-
-    // looking.z += looking.normalize().z * 5.0f;
-    if ( (drawPos.y > 0.0f || drawPos.x > 0.0f) || (drawPos.y < static_cast<float>(GridHeight) || drawPos.x < static_cast<float>(GridWidth)) ) {
-        Position pos(
-            std::floorf(drawPos.x / PixelSize),
-            std::floorf(drawPos.y / PixelSize),
-            std::floorf(drawPos.z / PixelSize)
-        );
-        const int thickness = drawSize;
-        for (int dx = -thickness; dx <= thickness; ++dx) {
-            for (int dy = -thickness; dy <= thickness; ++dy) {
-                Position posDraw(
-                        pos.x + dx,
-                        pos.y + dy,
-                        pos.z
-                );
-
-                Pixel tempPixel(Pixel::Type::Debug, posDraw);
-
-                pixelInstances.push_back(tempPixel.GetInstance(posDraw, GridWidth, GridHeight, GridDepth));
-                if (wnd.mouse.LeftIsPressed()) {
-                    pixels.insert_or_assign(posDraw, std::make_shared<Pixel>(particleDrawType, posDraw));
-                }
-            }
-        }
-    }
+    Update_Drawing(wnd, cam);
 
     // stepTime -= dt;
     // if (stepTime <= 0.0f) {
@@ -458,7 +414,7 @@ void Pixels::Update(Window &wnd, Camera &cam, float dt) {
         vec3 newRealPos = pix->realPosition;
 
         // First check if pixel is out of bounds of the grid
-        if ( (realPos.y < 0.0f || realPos.x < 0.0f) || (realPos.y > static_cast<float>(GridHeight) || realPos.x > static_cast<float>(GridWidth)) ) {
+        if ( (realPos.y < 0.0f || realPos.x < 0.0f || realPos.z < 0.0f) || (realPos.y > static_cast<float>(GridHeight) || realPos.x > static_cast<float>(GridWidth) || realPos.z > static_cast<float>(GridDepth)) ) {
             pixels.erase(pos);
             continue;
         }
@@ -571,7 +527,7 @@ void Pixels::Update(Window &wnd, Camera &cam, float dt) {
 }
 
 static bool drawing = false;
-void Pixels::Update_Drawing(Window& wnd) {
+void Pixels::Update_Drawing(Window& wnd, Camera& cam) {
 
     // Prevent drawing if disabled
     if (not drawingEnabled) return;
@@ -599,46 +555,53 @@ void Pixels::Update_Drawing(Window& wnd) {
         return;
     }
 
-    // Put last mouse position into variables
-    const auto [lastMouseX, lastMouseY] = lastMousePos;
-    // Get current mouse positon, set the last mouse position to it and pull out the values
-    const auto [currentMouseX, currentMouseY] = lastMousePos = wnd.mouse.GetPos();
+    const auto lookVector = cam.GetLookVector();
+    const auto cameraPos = cam.GetPos();
 
-    // Define the thickness of the drawing
-    const int thickness = static_cast<int>(drawSize); // You can adjust this value to increase or decrease the thickness
+    vec3 look(
+            lookVector.x,
+            lookVector.y,
+            lookVector.z
+    );
+    vec3 camPos(
+            cameraPos.x,
+            cameraPos.y,
+            cameraPos.z
+    );
 
-    const int diffMX = currentMouseX - lastMouseX;
-    const int diffMY = currentMouseY - lastMouseY;
-    const float distance = std::sqrtf(static_cast<float>(diffMX * diffMX + diffMY * diffMY));
+    vec3 lookScaled = look.normalize() * 5.0f;
+    // std::cout << lookScaled.x << " " << lookScaled.y << " " << lookScaled.z << std::endl;
+    vec3 drawPos = camPos + lookScaled;
 
-    int numSteps = static_cast<int>(distance);
-    if (numSteps < 1) numSteps = 1;
-
-    // Perform interpolation and update pixels along the path
-    for (int i = 0; i <= numSteps; ++i) {
-        const int interpolateX = lastMouseX + (currentMouseX - lastMouseX) * (i / numSteps);
-        const int interpolateY = lastMouseY + (currentMouseY - lastMouseY) * (i / numSteps);
-
-        const float gridPosX = (interpolateX / GridWidth * PixelSize) * 2.0f;
-        const float gridPosY = (interpolateY / GridHeight * PixelSize) * 2.0f;
-
-        if (interpolateX >= 0.0f && interpolateY >= 0.0f) {
-            // Update the pixels in a square around the current position to make the drawing thicker
-            for (int dx = -thickness; dx <= thickness; ++dx) {
-                for (int dy = -thickness; dy <= thickness; ++dy) {
-                    // where to draw
-                    int x = static_cast<int>(gridPosX) + dx;
-                    int y = static_cast<int>(gridPosY) + dy;
-                    const int z = 0; // range(gen);
-                    Position pos(
-                        static_cast<int>(gridPosX) + dx,
-                        static_cast<int>(gridPosY) + dy,
-                        0
+    // looking.z += looking.normalize().z * 5.0f;
+    if (
+            (drawPos.y > 0.0f && drawPos.x > 0.0f && drawPos.z > 0.0f) &&
+            (drawPos.y < static_cast<float>(GridHeight) && drawPos.x < static_cast<float>(GridWidth) && drawPos.z < static_cast<float>(GridDepth))
+            && drawingEnabled
+            ) {
+        Position pos(
+                std::floorf(drawPos.x / PixelSize),
+                std::floorf(drawPos.y / PixelSize),
+                std::floorf(drawPos.z / PixelSize)
+        );
+        const int thickness = drawSize;
+        for (int dx = -thickness; dx <= thickness; ++dx) {
+            for (int dy = -thickness; dy <= thickness; ++dy) {
+                for (int dz = -thickness; dz <= thickness; ++dz) {
+                    Position posDraw(
+                            pos.x + dx,
+                            pos.y + dy,
+                            pos.z + dz
                     );
+
+                    Pixel tempPixel(Pixel::Type::Debug, posDraw);
+
+                    pixelInstances.push_back(tempPixel.GetInstance(posDraw, GridWidth, GridHeight, GridDepth));
+
                     if (wnd.mouse.LeftIsPressed()) {
-                        pixels.insert_or_assign(Position{x, y, z}, std::make_shared<Pixel>(particleDrawType, pos));
+                        pixels.insert_or_assign(posDraw, std::make_shared<Pixel>(particleDrawType, posDraw));
                     } else {
-                        size_t removed = pixels.erase(Position{x, y, z});
+                        size_t removed = pixels.erase(posDraw);
                     }
                 }
             }

@@ -136,7 +136,7 @@ public:
 
     void UpdateConstantBuffer(Graphics &gfx);
 
-    void Update_Drawing(Window &wnd);
+    void Update_Drawing(Window &wnd, Camera& cam);
 
     void DrawUI(Graphics &gfx);
     void Draw(Graphics &gfx);
