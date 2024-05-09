@@ -111,7 +111,7 @@ public:
         return type;
     }
 
-    PixelInstance GetInstance(const Position& pos, unsigned int GridWidth, unsigned int GridHeight, unsigned int GridDepth);
+    PixelInstance GetInstance(const Position& pos);
 
     Color GetColor() const;
     vec3 Velocity() const;

@@ -115,7 +115,7 @@ Pixels::Pixels(Graphics &gfx) {
     // auto instances = new PixelInstance[pixels.size()];
     // unsigned loopCount = 0;
     for (const auto& [pos, pix] : pixels) {
-        pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
+        pixelInstances.push_back(pix->GetInstance(pos));
     }
     D3D11_BUFFER_DESC instanceBufferDesc = {};
     instanceBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -395,9 +395,9 @@ void Pixels::Update(Window &wnd, Camera &cam, float dt) {
         // I want the y positions in reverse order to prevent the weird stalled movement
         // const auto& [pos, pix] = *iter;
     for (const auto& [pos, pix] : newPixels) {
-
+        // Completely ignore debug particles
         if (pix->GetType() == Pixel::Type::Debug) {
-            pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
+            pixelInstances.push_back(pix->GetInstance(pos));
             continue;
         }
 
@@ -405,7 +405,10 @@ void Pixels::Update(Window &wnd, Camera &cam, float dt) {
         vec3 newRealPos = pix->realPosition;
 
         // First check if pixel is out of bounds of the grid
-        if ( (realPos.y < 0.0f || realPos.x < 0.0f || realPos.z < 0.0f) || (realPos.y > static_cast<float>(GridHeight) || realPos.x > static_cast<float>(GridWidth) || realPos.z > static_cast<float>(GridDepth)) ) {
+        if (
+            (realPos.y < 0.0f || realPos.x < 0.0f || realPos.z < 0.0f) ||
+            (realPos.y > static_cast<float>(GridHeight) || realPos.x > static_cast<float>(GridWidth) || realPos.z > static_cast<float>(GridDepth))
+        ) {
             pixels.erase(pos);
             continue;
         }
@@ -413,20 +416,32 @@ void Pixels::Update(Window &wnd, Camera &cam, float dt) {
         // Set new real pos to where we want to go
         newRealPos.y -= pix->Velocity().y * dt;
 
-        // Limit pixels from going off the bottom of the screen
-        // later we put pixel at top of screen
+        // Limit pixels from going off the bottom of the grid
         if (newRealPos.y <= 0.0f) {
+            // If the "floor" setting is enabled, stop the particle from moving
             if (BottomStop) {
-                pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
+                pixelInstances.push_back(pix->GetInstance(pos));
                 continue;
             }
+            // Else move back to the top of the grid
 
             newRealPos.y = static_cast<float>(GridHeight);
         }
 
-        // Skip x movement for now
+        // X and Z movement
+        if (shouldSidewaysMove(gen)) {
+            // clamp this value so that sand doesnt fall off the sides of the world
+            const float clamp = std::clamp<float>(newRealPos.x + (range(gen)), 0, GridWidth);
+            newRealPos.x = clamp;
+        }
+        if (shouldSidewaysMove(gen)) {
+            // clamp this value so that sand doesnt fall off the sides of the world
+            const float clamp = std::clamp<float>(newRealPos.z + (range(gen)), 0, GridDepth); // min(max(2, newRealPos.z + range(gen)), GridWidth - 2);
+            newRealPos.z = clamp;
+        }
 
-        // Create the Grid Position for new real psoition
+        /* All position updates need to happen before the following */
+        // Create the Grid Position for new real position
         vec3 flooredNewRealPos = newRealPos.floor();
         Position newGridPos(
             flooredNewRealPos.x,
@@ -434,10 +449,14 @@ void Pixels::Update(Window &wnd, Camera &cam, float dt) {
             flooredNewRealPos.z
         );
 
-        // if flooredrealpos == pos, accumulate and continue
-        if (flooredNewRealPos.y == pos.y) {
+        // if flooredRealPos == pos, accumulate and continue
+        if (
+            flooredNewRealPos.y == pos.y &&
+            flooredNewRealPos.x == pos.x &&
+            flooredNewRealPos.z == pos.z
+        ) {
             pix->realPosition = newRealPos;
-            pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
+            pixelInstances.push_back(pix->GetInstance(pos));
             continue;
         }
 
@@ -456,7 +475,7 @@ void Pixels::Update(Window &wnd, Camera &cam, float dt) {
 //            );
 
             // Push to instances
-            pixelInstances.push_back(pix->GetInstance(pos, GridWidth, GridHeight, GridDepth));
+            pixelInstances.push_back(pix->GetInstance(pos));
             continue;
         }
 
@@ -469,7 +488,7 @@ void Pixels::Update(Window &wnd, Camera &cam, float dt) {
         nodePix.key() = newGridPos;
         pixels.insert(std::move(nodePix));
         // Push to instances
-        pixelInstances.push_back(pix->GetInstance(newGridPos, GridWidth, GridHeight, GridDepth));
+        pixelInstances.push_back(pix->GetInstance(newGridPos));
 
 //        Position newPos = pos;
 //
@@ -524,7 +543,7 @@ void Pixels::Update_Drawing(Window& wnd, Camera& cam) {
     Position tempPos(drawPos.x, drawPos.y, drawPos.z);
     Pixel tempPixel(Pixel::Type::Debug, tempPos);
     // Add a debug particle at the pos the player is looking at
-    pixelInstances.push_back(tempPixel.GetInstance(tempPos, GridWidth, GridHeight, GridDepth));
+    pixelInstances.push_back(tempPixel.GetInstance(tempPos));
 
     // Return if neither are down
     if (not wnd.mouse.LeftIsPressed() && not wnd.mouse.RightIsPressed()) {
@@ -626,7 +645,7 @@ NormalizedColor Color::normalize() const {
     };
 }
 
-PixelInstance Pixel::GetInstance(const Position& pos, unsigned int GridWidth, unsigned int GridHeight, unsigned int GridDepth) {
+PixelInstance Pixel::GetInstance(const Position& pos) {
     const auto color = GetColor();
 
     PixelInstance inst = {
