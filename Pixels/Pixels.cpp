@@ -646,6 +646,9 @@ NormalizedColor Color::normalize() const {
     };
 }
 
+Pixel::Pixel(Type type_, Position pos) : realPosition(vec3(pos.x, pos.y, pos.z)), type(type_) {
+}
+
 PixelInstance Pixel::GetInstance(const Position& pos) {
     const auto color = GetColor();
 
@@ -700,47 +703,4 @@ vec3 Pixel::Velocity() const {
         default:
             return vec3 { 0, 1.0f, 0};
     }
-}
-
-vec3 vec3::floor() const {
-    return {
-        std::floorf(x),
-        std::floorf(y),
-        std::floorf(z)
-    };
-}
-
-vec3 vec3::ceil() const {
-    return {
-        std::ceilf(x),
-        std::ceilf(y),
-        std::ceilf(z)
-    };
-}
-
-vec3 vec3::operator+(const vec3 &rhs) const {
-    return {
-        this->x + rhs.x,
-        this->y + rhs.y,
-        this->z + rhs.z
-    };
-}
-
-vec3 vec3::operator*(float scale) const {
-    return vec3{
-        this->x * scale,
-        this->y * scale,
-        this->z * scale
-    };
-}
-
-vec3 vec3::normalize() const {
-    float magnitude = std::sqrtf(
-        (x * x) + (y * y) + (z * z)
-    );
-    return {
-        x * (1 / magnitude),
-        y * (1 / magnitude),
-        z * (1 / magnitude)
-    };
 }

@@ -44,8 +44,10 @@ add_executable(2dfallingsand
         imgui/imstb_truetype.h
         ImguiManager.cpp
         ImguiManager.h
+    vec3.cpp
+    vec3.h
 
-        # Other
+    # Other
 )
 
 set_property(TARGET 2dfallingsand PROPERTY WIN32_EXECUTABLE true)

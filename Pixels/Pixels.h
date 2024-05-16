@@ -10,6 +10,8 @@
 #include "../EngineTimer.h"
 #include <map>
 
+#include "../vec3.h"
+
 namespace wrl = Microsoft::WRL;
 
 struct NormalizedColor {
@@ -63,33 +65,13 @@ struct PixelInstance {
     NormalizedColor color;
 };
 
-struct vec3 {
-    vec3(float x, float y, float z) : x(x), y(y), z(z) {}
-    vec3(float x, float y) : x(x), y(y), z(0.0f) {}
-    explicit vec3(float x) : x(x), y(x), z(x) {}
-
-    vec3 floor() const;
-    vec3 ceil() const;
-    vec3 normalize() const;
-
-    vec3 operator+(const vec3& rhs) const;
-
-    vec3 operator *(float scale) const;
-    vec3 operator *(const vec3& vec) const;
-    vec3& operator*=(float scale);
-
-    float x;
-    float y;
-    float z;
-};
-
 class Pixel {
     friend class Pixels;
 public:
     enum class Type {
         Unknown = 0,
         Debug,
-        
+
         Sand,
         Water,
         Steam,
@@ -99,13 +81,7 @@ public:
         last,
     };
 
-    Pixel(Type type_, Position pos): type(type_) {
-        realPosition = {
-            pos.x,
-            pos.y,
-            pos.z
-        };
-    }
+    Pixel(Type type_, Position pos);
     ~Pixel() = default;
 
     Type GetType() const {
