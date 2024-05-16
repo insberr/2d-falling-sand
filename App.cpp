@@ -121,7 +121,5 @@ int App::Run()
 
         Update(dt, speedFactor_dt);
         Render(dt);
-
-
     }
 }
