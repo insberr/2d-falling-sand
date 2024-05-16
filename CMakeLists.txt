@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 23)
 
 configure_file(Shaders/PixelShader.hlsl ${CMAKE_BINARY_DIR}/PixelShader.hlsl COPYONLY)
 configure_file(Shaders/VertexShader.hlsl ${CMAKE_BINARY_DIR}/VertexShader.hlsl COPYONLY)
+configure_file(Shaders/Marching_Pix.hlsl ${CMAKE_BINARY_DIR}/Marching_Pix.hlsl COPYONLY)
+configure_file(Shaders/Marching_Vert.hlsl ${CMAKE_BINARY_DIR}/Marching_Vert.hlsl COPYONLY)
 
 add_compile_definitions(IS_DEBUG)
 
